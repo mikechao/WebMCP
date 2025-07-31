@@ -60,6 +60,11 @@ export default defineBackground({
           const granted = await ConsentManager.requestConsent(domain, tabId, message.url);
           console.log(`[Background] Consent ${granted ? 'granted' : 'denied'} for domain: ${domain}`);
           
+          // Notify UI that consent was updated
+          chrome.runtime.sendMessage({ type: 'consent-updated' }).catch(() => {
+            // Ignore errors - UI might not be open
+          });
+          
           // Send response back to content script
           chrome.tabs.sendMessage(tabId, {
             type: 'consent-response',
@@ -83,6 +88,11 @@ export default defineBackground({
           await ConsentManager.removeConsent(message.domain);
           // Directly disconnect servers
           mcpHub.disconnectDomainServers(message.domain);
+          
+          // Notify UI that consent was updated
+          chrome.runtime.sendMessage({ type: 'consent-updated' }).catch(() => {
+            // Ignore errors - UI might not be open
+          });
         } catch (error) {
           console.error('[Background] Error removing consent:', error);
         }
@@ -101,6 +111,11 @@ export default defineBackground({
           for (const domain of grantedDomains) {
             mcpHub.disconnectDomainServers(domain);
           }
+          
+          // Notify UI that consent was updated
+          chrome.runtime.sendMessage({ type: 'consent-updated' }).catch(() => {
+            // Ignore errors - UI might not be open
+          });
         } catch (error) {
           console.error('[Background] Error clearing all consent:', error);
         }

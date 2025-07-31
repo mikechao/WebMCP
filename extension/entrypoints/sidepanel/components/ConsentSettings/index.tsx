@@ -4,6 +4,8 @@ import { Button } from '../ui/button';
 import { Card } from '../ui/card';
 import { Alert, AlertDescription, AlertTitle } from '../ui/alert';
 import { Trash2, Shield, Info, Settings } from 'lucide-react';
+import { cn } from '../../lib/utils';
+import { toast } from 'sonner';
 
 interface ConsentDecision {
   domain: string;
@@ -15,9 +17,33 @@ interface ConsentDecision {
 export default function ConsentSettings(): React.ReactElement {
   const [consentDecisions, setConsentDecisions] = useState<Record<string, ConsentDecision>>({});
   const [isLoading, setIsLoading] = useState(true);
+  const [removingDomains, setRemovingDomains] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     loadConsentDecisions();
+    
+    // Listen for storage changes to update UI in real-time
+    const handleStorageChange = (changes: { [key: string]: chrome.storage.StorageChange }) => {
+      if (changes.mcp_consent_decisions) {
+        setConsentDecisions(changes.mcp_consent_decisions.newValue || {});
+      }
+    };
+    
+    chrome.storage.onChanged.addListener(handleStorageChange);
+    
+    // Also listen for runtime messages for immediate updates
+    const handleMessage = (message: any) => {
+      if (message.type === 'consent-updated') {
+        loadConsentDecisions();
+      }
+    };
+    
+    chrome.runtime.onMessage.addListener(handleMessage);
+    
+    return () => {
+      chrome.storage.onChanged.removeListener(handleStorageChange);
+      chrome.runtime.onMessage.removeListener(handleMessage);
+    };
   }, []);
 
   const loadConsentDecisions = async () => {
@@ -33,21 +59,50 @@ export default function ConsentSettings(): React.ReactElement {
 
   const removeConsent = async (domain: string) => {
     try {
+      // Add domain to removing set for animation
+      setRemovingDomains(prev => new Set(prev).add(domain));
+      
       // Send message to background to handle consent removal and disconnection
       await chrome.runtime.sendMessage({
         type: 'remove-consent',
         domain: domain
       });
       
-      // Update local state by reloading
-      await loadConsentDecisions();
+      // Show success toast
+      toast.success(`Access revoked for ${domain}`, {
+        description: 'MCP servers disconnected and permissions removed'
+      });
+      
+      // Small delay to let the animation show before removing from state
+      setTimeout(() => {
+        setRemovingDomains(prev => {
+          const newSet = new Set(prev);
+          newSet.delete(domain);
+          return newSet;
+        });
+      }, 300);
+      
     } catch (error) {
       console.error('Failed to remove consent:', error);
+      
+      // Show error toast
+      toast.error(`Failed to revoke access for ${domain}`, {
+        description: 'Please try again'
+      });
+      
+      // Remove from removing set if error occurs
+      setRemovingDomains(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(domain);
+        return newSet;
+      });
     }
   };
 
   const clearAllConsent = async () => {
     try {
+      const count = Object.keys(consentDecisions).length;
+      
       // Send message to background to handle clearing all consent
       await chrome.runtime.sendMessage({
         type: 'clear-all-consent'
@@ -55,8 +110,18 @@ export default function ConsentSettings(): React.ReactElement {
       
       // Update local state
       setConsentDecisions({});
+      
+      // Show success toast
+      toast.success(`All consent cleared`, {
+        description: `Removed access for ${count} domain${count !== 1 ? 's' : ''}`
+      });
     } catch (error) {
       console.error('Failed to clear all consent:', error);
+      
+      // Show error toast
+      toast.error('Failed to clear all consent', {
+        description: 'Please try again'
+      });
     }
   };
 
@@ -116,7 +181,15 @@ export default function ConsentSettings(): React.ReactElement {
               </div>
               <div className="space-y-2">
                 {grantedDomains.map((decision) => (
-                  <Card key={decision.domain} className="p-3">
+                  <Card 
+                    key={decision.domain} 
+                    className={cn(
+                      "p-3 transition-all duration-300 ease-in-out",
+                      removingDomains.has(decision.domain) 
+                        ? "opacity-0 scale-95 translate-x-4" 
+                        : "opacity-100 scale-100 translate-x-0"
+                    )}
+                  >
                     <div className="flex items-center justify-between">
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2">
@@ -141,7 +214,11 @@ export default function ConsentSettings(): React.ReactElement {
                         size="sm"
                         variant="ghost"
                         onClick={() => removeConsent(decision.domain)}
-                        className="h-7 w-7 p-0 text-muted-foreground hover:text-destructive"
+                        disabled={removingDomains.has(decision.domain)}
+                        className={cn(
+                          "h-7 w-7 p-0 text-muted-foreground hover:text-destructive transition-colors",
+                          removingDomains.has(decision.domain) && "opacity-50 cursor-not-allowed"
+                        )}
                       >
                         <Trash2 className="h-3 w-3" />
                       </Button>
@@ -162,7 +239,15 @@ export default function ConsentSettings(): React.ReactElement {
               </div>
               <div className="space-y-2">
                 {deniedDomains.map((decision) => (
-                  <Card key={decision.domain} className="p-3">
+                  <Card 
+                    key={decision.domain} 
+                    className={cn(
+                      "p-3 transition-all duration-300 ease-in-out",
+                      removingDomains.has(decision.domain) 
+                        ? "opacity-0 scale-95 translate-x-4" 
+                        : "opacity-100 scale-100 translate-x-0"
+                    )}
+                  >
                     <div className="flex items-center justify-between">
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2">
@@ -184,7 +269,11 @@ export default function ConsentSettings(): React.ReactElement {
                         size="sm"
                         variant="ghost"
                         onClick={() => removeConsent(decision.domain)}
-                        className="h-7 w-7 p-0 text-muted-foreground hover:text-destructive"
+                        disabled={removingDomains.has(decision.domain)}
+                        className={cn(
+                          "h-7 w-7 p-0 text-muted-foreground hover:text-destructive transition-colors",
+                          removingDomains.has(decision.domain) && "opacity-50 cursor-not-allowed"
+                        )}
                       >
                         <Trash2 className="h-3 w-3" />
                       </Button>
