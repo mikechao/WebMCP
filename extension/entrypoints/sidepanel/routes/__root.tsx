@@ -1,6 +1,6 @@
 import { AssistantRuntimeProvider } from '@assistant-ui/react';
 import { createRootRouteWithContext, Link, Outlet } from '@tanstack/react-router';
-import { AlertCircle, FileQuestion, MessageSquare, Server } from 'lucide-react';
+import { AlertCircle, FileQuestion, MessageSquare, Server, Settings } from 'lucide-react';
 import * as React from 'react';
 import { Toaster } from 'sonner';
 import { Alert, AlertDescription, AlertTitle } from '../components/ui/alert';
@@ -57,6 +57,13 @@ function RootComponent() {
             >
               <Server className="h-4 w-4" />
               MCP Server
+            </Link>
+            <Link
+              to="/settings"
+              className="flex items-center gap-2 text-sm font-medium hover:text-primary [&.active]:text-primary"
+            >
+              <Settings className="h-4 w-4" />
+              Settings
             </Link>
           </nav>
         </header>
