@@ -154,7 +154,7 @@ export class ConsentManager {
   /**
    * Get all consent decisions
    */
-  private static async getConsentDecisions(): Promise<Record<string, ConsentDecision>> {
+  public static async getConsentDecisions(): Promise<Record<string, ConsentDecision>> {
     const result = await chrome.storage.local.get(this.STORAGE_KEY);
     return result[this.STORAGE_KEY] || {};
   }

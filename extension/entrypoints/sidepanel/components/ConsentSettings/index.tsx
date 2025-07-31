@@ -4,7 +4,6 @@ import { Button } from '../ui/button';
 import { Card } from '../ui/card';
 import { Alert, AlertDescription, AlertTitle } from '../ui/alert';
 import { Trash2, Shield, Info, Settings } from 'lucide-react';
-import { cn } from '../../lib/utils';
 
 interface ConsentDecision {
   domain: string;
@@ -34,10 +33,14 @@ export default function ConsentSettings(): React.ReactElement {
 
   const removeConsent = async (domain: string) => {
     try {
-      const updated = { ...consentDecisions };
-      delete updated[domain];
-      await chrome.storage.local.set({ mcp_consent_decisions: updated });
-      setConsentDecisions(updated);
+      // Send message to background to handle consent removal and disconnection
+      await chrome.runtime.sendMessage({
+        type: 'remove-consent',
+        domain: domain
+      });
+      
+      // Update local state by reloading
+      await loadConsentDecisions();
     } catch (error) {
       console.error('Failed to remove consent:', error);
     }
@@ -45,7 +48,12 @@ export default function ConsentSettings(): React.ReactElement {
 
   const clearAllConsent = async () => {
     try {
-      await chrome.storage.local.remove(['mcp_consent_decisions', 'mcp_pending_consent']);
+      // Send message to background to handle clearing all consent
+      await chrome.runtime.sendMessage({
+        type: 'clear-all-consent'
+      });
+      
+      // Update local state
       setConsentDecisions({});
     } catch (error) {
       console.error('Failed to clear all consent:', error);

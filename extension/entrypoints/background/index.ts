@@ -9,7 +9,8 @@ export default defineBackground({
   type: 'module',
   async main() {
     const server = new McpServer({ name: 'Extension-Hub', version: '1.0.0' });
-    new McpHub(server);
+    const mcpHub = new McpHub(server);
+    
     chrome.runtime.onConnect.addListener((port) => {
       if (port.name === 'mcp') {
         console.log('[MCP Hub] UI client connected');
@@ -72,6 +73,36 @@ export default defineBackground({
             messageId: message.messageId,
             granted: false
           });
+        }
+        return;
+      }
+
+      if (message.type === 'remove-consent') {
+        console.log(`[Background] Removing consent for domain: ${message.domain}`);
+        try {
+          await ConsentManager.removeConsent(message.domain);
+          // Directly disconnect servers
+          mcpHub.disconnectDomainServers(message.domain);
+        } catch (error) {
+          console.error('[Background] Error removing consent:', error);
+        }
+        return;
+      }
+
+      if (message.type === 'clear-all-consent') {
+        console.log('[Background] Clearing all consent decisions');
+        try {
+          const decisions = await ConsentManager.getConsentDecisions();
+          const grantedDomains = Object.keys(decisions).filter(domain => decisions[domain].granted);
+          
+          await ConsentManager.clearAllConsent();
+          
+          // Disconnect servers for all granted domains
+          for (const domain of grantedDomains) {
+            mcpHub.disconnectDomainServers(domain);
+          }
+        } catch (error) {
+          console.error('[Background] Error clearing all consent:', error);
         }
         return;
       }
