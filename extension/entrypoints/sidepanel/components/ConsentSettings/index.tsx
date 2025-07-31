@@ -6,6 +6,7 @@ import { Alert, AlertDescription, AlertTitle } from '../ui/alert';
 import { Trash2, Shield, Info, Settings } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import { toast } from 'sonner';
+import { ConsentStatusBadge } from '../ConsentStatusBadge';
 
 interface ConsentDecision {
   domain: string;
@@ -199,12 +200,10 @@ export default function ConsentSettings(): React.ReactElement {
                           </span>
                         </div>
                         <div className="flex items-center gap-2 mt-1">
-                          <Badge 
-                            variant={decision.permanent ? "default" : "secondary"} 
-                            className="text-xs h-4"
-                          >
-                            {decision.permanent ? 'Always' : 'Session'}
-                          </Badge>
+                          <ConsentStatusBadge 
+                            domain={decision.domain} 
+                            consentDecisions={consentDecisions}
+                          />
                           <span className="text-xs text-muted-foreground">
                             {formatTimestamp(decision.timestamp)}
                           </span>
@@ -257,9 +256,10 @@ export default function ConsentSettings(): React.ReactElement {
                           </span>
                         </div>
                         <div className="flex items-center gap-2 mt-1">
-                          <Badge variant="outline" className="text-xs h-4">
-                            Denied
-                          </Badge>
+                          <ConsentStatusBadge 
+                            domain={decision.domain} 
+                            consentDecisions={consentDecisions}
+                          />
                           <span className="text-xs text-muted-foreground">
                             {formatTimestamp(decision.timestamp)}
                           </span>

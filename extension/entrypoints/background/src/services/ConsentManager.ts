@@ -65,11 +65,8 @@ export class ConsentManager {
     await this.setPendingRequest(domain, true);
 
     try {
-      // Show consent popup
+      // Show consent popup with follow-up permanence dialog
       const granted = await this.showConsentPopup(domain, tabId, url);
-      
-      // Store decision
-      await this.saveConsentDecision(domain, granted, false); // Default to non-permanent
       
       return granted;
     } finally {
@@ -83,7 +80,7 @@ export class ConsentManager {
    */
   private static async showConsentPopup(domain: string, tabId: number, url: string): Promise<boolean> {
     return new Promise((resolve) => {
-      // Create notification or use chrome.notifications
+      // Create initial notification with 2 buttons
       chrome.notifications.create(`mcp-consent-${domain}-${Date.now()}`, {
         type: 'basic',
         iconUrl: chrome.runtime.getURL('icon/48.png'),
@@ -91,13 +88,12 @@ export class ConsentManager {
         message: `Website "${domain}" has an MCP server. Do you trust it to connect and access tools?`,
         buttons: [
           { title: 'Deny' },
-          { title: 'Allow Once' },
-          { title: 'Always Allow' }
+          { title: 'Allow' }
         ],
         requireInteraction: true
       }, (notificationId) => {
         // Handle button clicks
-        const handleButtonClick = (notificationId: string, buttonIndex: number) => {
+        const handleButtonClick = async (notificationId: string, buttonIndex: number) => {
           if (notificationId.startsWith(`mcp-consent-${domain}`)) {
             chrome.notifications.clear(notificationId);
             chrome.notifications.onButtonClicked.removeListener(handleButtonClick);
@@ -108,12 +104,9 @@ export class ConsentManager {
                 this.saveConsentDecision(domain, false, false);
                 resolve(false);
                 break;
-              case 1: // Allow Once
-                this.saveConsentDecision(domain, true, false);
-                resolve(true);
-                break;
-              case 2: // Always Allow
-                this.saveConsentDecision(domain, true, true); // Permanent
+              case 1: // Allow - Show follow-up dialog for permanence
+                const isPermanent = await this.showPermanenceDialog(domain);
+                this.saveConsentDecision(domain, true, isPermanent);
                 resolve(true);
                 break;
               default:
@@ -127,6 +120,56 @@ export class ConsentManager {
             chrome.notifications.onButtonClicked.removeListener(handleButtonClick);
             chrome.notifications.onClosed.removeListener(handleClose);
             resolve(false); // Default to deny if closed
+          }
+        };
+
+        chrome.notifications.onButtonClicked.addListener(handleButtonClick);
+        chrome.notifications.onClosed.addListener(handleClose);
+      });
+    });
+  }
+
+  /**
+   * Show follow-up dialog asking about permanent consent
+   */
+  private static async showPermanenceDialog(domain: string): Promise<boolean> {
+    return new Promise((resolve) => {
+      chrome.notifications.create(`mcp-permanence-${domain}-${Date.now()}`, {
+        type: 'basic',
+        iconUrl: chrome.runtime.getURL('icon/48.png'),
+        title: 'Remember This Decision?',
+        message: `Always allow "${domain}" to connect, or just for this session?`,
+        buttons: [
+          { title: 'This Session Only' },
+          { title: 'Always Allow' }
+        ],
+        requireInteraction: true
+      }, (notificationId) => {
+        // Handle button clicks
+        const handleButtonClick = (notificationId: string, buttonIndex: number) => {
+          if (notificationId.startsWith(`mcp-permanence-${domain}`)) {
+            chrome.notifications.clear(notificationId);
+            chrome.notifications.onButtonClicked.removeListener(handleButtonClick);
+            chrome.notifications.onClosed.removeListener(handleClose);
+            
+            switch (buttonIndex) {
+              case 0: // This Session Only
+                resolve(false); // Not permanent
+                break;
+              case 1: // Always Allow
+                resolve(true); // Permanent
+                break;
+              default:
+                resolve(false); // Default to session only
+            }
+          }
+        };
+
+        const handleClose = (notificationId: string, byUser: boolean) => {
+          if (notificationId.startsWith(`mcp-permanence-${domain}`) && byUser) {
+            chrome.notifications.onButtonClicked.removeListener(handleButtonClick);
+            chrome.notifications.onClosed.removeListener(handleClose);
+            resolve(false); // Default to session only if closed
           }
         };
 
