@@ -202,6 +202,7 @@ export default defineContentScript({
     let client: Client | null = null;
     let transport: TabClientTransport | null = null;
     let isConnected = false;
+    let isConnecting = false; // Flag to prevent concurrent connection attempts
 
     // Connect to background
     const backgroundPort = chrome.runtime.connect({
@@ -248,30 +249,38 @@ export default defineContentScript({
         return;
       }
 
-      // Create new client and transport for each connection attempt
-      client = new Client({
-        name: 'ExtensionProxyClient',
-        version: '1.0.0',
-      });
+      if (isConnecting) {
+        console.log('[MCP Proxy] Connection attempt already in progress, skipping');
+        return;
+      }
 
-      transport = new TabClientTransport({
-        targetOrigin: window.location.origin,
-      });
-
-      // Handle transport closure (including server-stopped events)
-      transport.onclose = () => {
-        console.log('[MCP Proxy] Transport closed, clearing tools');
-        backgroundPort.postMessage({
-          type: 'tools-updated',
-          tools: [],
-        });
-        cachedToolHashes.clear();
-        isConnected = false;
-        client = null;
-        transport = null;
-      };
+      isConnecting = true;
 
       try {
+        // Create new client and transport for each connection attempt
+        client = new Client({
+          name: 'ExtensionProxyClient',
+          version: '1.0.0',
+        });
+
+        transport = new TabClientTransport({
+          targetOrigin: window.location.origin,
+        });
+
+        // Handle transport closure (including server-stopped events)
+        transport.onclose = () => {
+          console.log('[MCP Proxy] Transport closed, clearing tools');
+          backgroundPort.postMessage({
+            type: 'tools-updated',
+            tools: [],
+          });
+          cachedToolHashes.clear();
+          isConnected = false;
+          isConnecting = false;
+          client = null;
+          transport = null;
+        };
+
         // Start connection process
         const connectPromise = client.connect(transport);
 
@@ -358,6 +367,8 @@ export default defineContentScript({
       } catch (error) {
         console.error('[MCP Proxy] Error connecting to server:', error);
         isConnected = false;
+      } finally {
+        isConnecting = false;
       }
     }
 
@@ -378,7 +389,7 @@ export default defineContentScript({
     });
 
     // Initial connection attempt
-    // await attemptConnection();
+    await attemptConnection();
 
     // Clean up on disconnect
     backgroundPort.onDisconnect.addListener(() => {
