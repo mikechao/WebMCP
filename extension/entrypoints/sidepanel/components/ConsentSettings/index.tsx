@@ -36,6 +36,7 @@ export default function ConsentSettings(): React.ReactElement {
     const handleMessage = (message: any) => {
       if (message.type === 'consent-updated') {
         loadConsentDecisions();
+        // Toast notifications are now handled globally in __root.tsx
       }
     };
     
@@ -69,9 +70,13 @@ export default function ConsentSettings(): React.ReactElement {
         domain: domain
       });
       
-      // Show success toast
+      // Show enhanced success toast with action
       toast.success(`Access revoked for ${domain}`, {
-        description: 'MCP servers disconnected and permissions removed'
+        description: 'MCP servers disconnected and permissions removed',
+        action: {
+          label: 'Open Settings',
+          onClick: () => chrome.runtime.openOptionsPage()
+        }
       });
       
       // Small delay to let the animation show before removing from state
@@ -86,9 +91,13 @@ export default function ConsentSettings(): React.ReactElement {
     } catch (error) {
       console.error('Failed to remove consent:', error);
       
-      // Show error toast
+      // Show enhanced error toast with action
       toast.error(`Failed to revoke access for ${domain}`, {
-        description: 'Please try again'
+        description: 'Please try again or check your network connection',
+        action: {
+          label: 'Retry',
+          onClick: () => removeConsent(domain)
+        }
       });
       
       // Remove from removing set if error occurs
@@ -101,9 +110,18 @@ export default function ConsentSettings(): React.ReactElement {
   };
 
   const clearAllConsent = async () => {
+    const count = Object.keys(consentDecisions).length;
+    
+    // Show confirmation dialog
+    const confirmed = window.confirm(
+      `Are you sure you want to clear all consent decisions?\n\nThis will remove access for ${count} domain${count !== 1 ? 's' : ''} and disconnect all MCP servers. This action cannot be undone.`
+    );
+    
+    if (!confirmed) {
+      return;
+    }
+
     try {
-      const count = Object.keys(consentDecisions).length;
-      
       // Send message to background to handle clearing all consent
       await chrome.runtime.sendMessage({
         type: 'clear-all-consent'
@@ -112,9 +130,9 @@ export default function ConsentSettings(): React.ReactElement {
       // Update local state
       setConsentDecisions({});
       
-      // Show success toast
+      // Show enhanced success toast
       toast.success(`All consent cleared`, {
-        description: `Removed access for ${count} domain${count !== 1 ? 's' : ''}`
+        description: `Removed access for ${count} domain${count !== 1 ? 's' : ''}`,
       });
     } catch (error) {
       console.error('Failed to clear all consent:', error);
@@ -229,7 +247,7 @@ export default function ConsentSettings(): React.ReactElement {
           )}
 
           {deniedDomains.length > 0 && (
-            <div>
+            <div data-section="denied-domains">
               <div className="flex items-center justify-between mb-2">
                 <h3 className="text-sm font-medium text-red-600">Denied Domains</h3>
                 <Badge variant="secondary" className="text-xs">

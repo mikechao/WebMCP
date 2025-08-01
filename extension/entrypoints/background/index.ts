@@ -60,8 +60,13 @@ export default defineBackground({
           const granted = await ConsentManager.requestConsent(domain, tabId, message.url);
           console.log(`[Background] Consent ${granted ? 'granted' : 'denied'} for domain: ${domain}`);
           
-          // Notify UI that consent was updated
-          chrome.runtime.sendMessage({ type: 'consent-updated' }).catch(() => {
+          // Notify UI that consent was updated with detailed information
+          chrome.runtime.sendMessage({ 
+            type: 'consent-updated',
+            domain: domain,
+            granted: granted,
+            isNewDecision: true
+          }).catch(() => {
             // Ignore errors - UI might not be open
           });
           
