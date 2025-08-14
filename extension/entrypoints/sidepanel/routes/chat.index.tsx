@@ -1,24 +1,19 @@
+import { Thread } from '@/entrypoints/sidepanel/components/assistant-ui/thread';
+import { ThreadList } from '@/entrypoints/sidepanel/components/assistant-ui/thread-list';
+import { ToolSelector } from '@/entrypoints/sidepanel/components/tool-selector';
+import { Button } from '@/entrypoints/sidepanel/components/ui/button';
 import { AssistantRuntimeProvider } from '@assistant-ui/react';
-import {
-  frontendTools,
-  useChatRuntime,
-  useDangerousInBrowserRuntime,
-} from '@assistant-ui/react-ai-sdk';
+import { useChatRuntime } from '@assistant-ui/react-ai-sdk';
 import { McpClientProvider } from '@mcp-b/mcp-react-hooks';
 import { createFileRoute } from '@tanstack/react-router';
 import {
   BrainCircuitIcon,
-  ChevronLeftIcon,
   ChevronRightIcon,
   HelpCircleIcon,
   MenuIcon,
   Settings2Icon,
 } from 'lucide-react';
-import { useState } from 'react';
-import { Thread } from '@/entrypoints/sidepanel/components/assistant-ui/thread';
-import { ThreadList } from '@/entrypoints/sidepanel/components/assistant-ui/thread-list';
-import { ToolSelector } from '@/entrypoints/sidepanel/components/tool-selector';
-import { Button } from '@/entrypoints/sidepanel/components/ui/button';
+import { useEffect, useState } from 'react';
 import { client, transport } from '../lib/client';
 import { config } from '../lib/config';
 
@@ -26,8 +21,8 @@ const Chat = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isToolSelectorOpen, setIsToolSelectorOpen] = useState(false);
   const runtime = useChatRuntime({
-    api: config.api.fullChatUrl,
-    maxSteps: config.features.maxChatSteps,
+    api: 'http://localhost:8787/api/chat',
+    maxSteps: 100,
     onError: (error) => {
       if (config.features.enableDebugLogging) {
         console.error('[Chat] Error:', error);
@@ -35,6 +30,13 @@ const Chat = () => {
       throw error;
     },
   });
+
+  // Allow other components to open the tool selector via a window event
+  useEffect(() => {
+    const handler = () => setIsToolSelectorOpen(true);
+    window.addEventListener('open-tool-selector', handler as EventListener);
+    return () => window.removeEventListener('open-tool-selector', handler as EventListener);
+  }, []);
 
   return (
     <McpClientProvider client={client} transport={transport} opts={{}}>
@@ -51,8 +53,8 @@ const Chat = () => {
               </div>
             </div>
             {/* Bottom bar aligned with toolbar */}
-            <div className="border-t bg-gradient-to-r from-background via-background/95 to-background backdrop-blur-md supports-[backdrop-filter]:bg-background/80">
-              <div className="flex items-center justify-between px-3 py-2">
+            <div className="toolbar-surface">
+              <div className="toolbar-inner">
                 <h2 className="font-semibold text-sm">Threads</h2>
                 <Button
                   variant="ghost"
@@ -69,15 +71,17 @@ const Chat = () => {
         ) : (
           // Chat view with toolbar
           <div className="flex flex-col h-full">
-            <Thread />
+            <div className="flex-1 min-h-0">
+              <Thread />
+            </div>
             {/* Enhanced Toolbar */}
-            <div className="border-t bg-gradient-to-r from-background via-background/95 to-background backdrop-blur-md supports-[backdrop-filter]:bg-background/80">
-              <div className="flex items-center justify-between px-3 py-2">
-                <div className="flex items-center gap-1">
+            <div className="toolbar-surface">
+              <div className="toolbar-inner">
+                <div className="toolbar-group">
                   <Button
                     variant="ghost"
                     size="sm"
-                    className="h-9 px-3 flex items-center gap-2 hover:bg-primary/10 transition-colors"
+                    className="btn-toolbar-primary"
                     onClick={() => setIsSidebarOpen(true)}
                   >
                     <MenuIcon className="h-4 w-4" />
@@ -89,7 +93,7 @@ const Chat = () => {
                   <Button
                     variant="ghost"
                     size="sm"
-                    className="h-9 w-9 p-0 hover:bg-primary/10 transition-colors"
+                    className="btn-toolbar-icon-primary"
                     onClick={() => setIsToolSelectorOpen(true)}
                     title="Select Tools"
                   >
@@ -107,11 +111,11 @@ const Chat = () => {
                   </Button>
                 </div>
 
-                <div className="flex items-center gap-1">
+                <div className="toolbar-group">
                   <Button
                     variant="ghost"
                     size="sm"
-                    className="h-9 w-9 p-0 hover:bg-primary/10 transition-colors"
+                    className="btn-toolbar-icon-secondary"
                     disabled
                     title="Help (Coming Soon)"
                   >

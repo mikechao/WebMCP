@@ -4,18 +4,32 @@ import {
   CallToolRequestSchema,
   type CallToolResult,
   ListToolsRequestSchema,
-  ToolListChangedNotificationSchema,
+  Tool,
 } from '@modelcontextprotocol/sdk/types.js';
+import * as fs from 'fs';
 import nativeMessagingHostInstance from '../native-messaging-host';
+import { executeScriptToolOverride, registerUserscriptToolOverride } from './inject-user-mcp';
 
 export const setupTools = (server: McpServer) => {
   // List tools handler
   server.server.setRequestHandler(ListToolsRequestSchema, async () => {
-    const tools = await nativeMessagingHostInstance.sendRequestToExtensionAndWait(
+    const tools = (await nativeMessagingHostInstance.sendRequestToExtensionAndWait(
       {},
       NativeMessageType.LIST_TOOLS,
       30000
+    )) as { data: Tool[] };
+
+    // Filter out the original tools that we're overriding
+    tools.data = tools.data.filter(
+      (tool) =>
+        tool.name !== 'extension_tool_execute_user_script' &&
+        tool.name !== 'extension_tool_userscripts_register'
     );
+
+    // Add our overridden tools that read files from disk
+    tools.data.push(executeScriptToolOverride);
+    tools.data.push(registerUserscriptToolOverride);
+
     // @ts-ignore
     return { tools: tools.data };
   });
@@ -60,9 +74,95 @@ export const setupTools = (server: McpServer) => {
   // );
 
   // Call tool handler
-  server.server.setRequestHandler(CallToolRequestSchema, async (request) =>
-    handleToolCall(request.params.name, request.params.arguments || {})
-  );
+  server.server.setRequestHandler(CallToolRequestSchema, async (request) => {
+    if (request.params.name === 'extension_tool_execute_user_script') {
+      if (!request.params.arguments?.filePath) {
+        return {
+          content: [
+            {
+              type: 'text',
+              text: 'Missing required argument: filePath. Provide an absolute path to a local JavaScript userscript, e.g. /Users/yourname/project/scripts/example.user.js. The native host will read the file and the extension will inject it into the target tab.',
+            },
+          ],
+          isError: true,
+        };
+      }
+      const file = fs.readFileSync(request.params.arguments.filePath as string, 'utf8');
+
+      return handleToolCall('extension_tool_execute_user_script', {
+        tabId: request.params.arguments?.tabId,
+        code: file,
+        allFrames: false,
+        world: 'MAIN',
+      });
+    }
+
+    if (request.params.name === 'extension_tool_userscripts_register') {
+      if (!request.params.arguments?.filePath) {
+        return {
+          content: [
+            {
+              type: 'text',
+              text: 'Missing required argument: filePath. Provide an absolute path to a local JavaScript userscript, e.g. /Users/yourname/project/scripts/example.user.js. The native host will read the file and register it as a persistent userscript.',
+            },
+          ],
+          isError: true,
+        };
+      }
+
+      if (!request.params.arguments?.id || !request.params.arguments?.matches) {
+        return {
+          content: [
+            {
+              type: 'text',
+              text: 'Missing required arguments: id and matches are required. id should be a unique identifier for the script, and matches should be an array of URL patterns.',
+            },
+          ],
+          isError: true,
+        };
+      }
+
+      const file = fs.readFileSync(request.params.arguments.filePath as string, 'utf8');
+
+      // Build the registration parameters with MCP-B optimized defaults
+      const registrationParams: any = {
+        id: request.params.arguments.id,
+        matches: request.params.arguments.matches,
+        js: [{ code: file }],
+      };
+
+      // Add optional parameters if provided
+      if (request.params.arguments.excludeMatches) {
+        registrationParams.excludeMatches = request.params.arguments.excludeMatches;
+      }
+      if (request.params.arguments.allFrames !== undefined) {
+        registrationParams.allFrames = request.params.arguments.allFrames;
+      }
+
+      // Set runAt with document_start as the recommended default for MCP-B userscripts
+      if (request.params.arguments.runAt) {
+        registrationParams.runAt = request.params.arguments.runAt;
+      } else {
+        registrationParams.runAt = 'document_start'; // Default to document_start for MCP-B userscripts
+      }
+
+      // Set world with MAIN as the recommended default for MCP-B userscripts
+      if (request.params.arguments.world) {
+        registrationParams.world = request.params.arguments.world;
+      } else {
+        registrationParams.world = 'MAIN'; // Default to MAIN for MCP-B userscripts to interact with page
+      }
+
+      // Only set worldId if using USER_SCRIPT world
+      if (request.params.arguments.worldId && registrationParams.world === 'USER_SCRIPT') {
+        registrationParams.worldId = request.params.arguments.worldId;
+      }
+
+      return handleToolCall('extension_tool_userscripts_register', registrationParams);
+    }
+
+    return handleToolCall(request.params.name, request.params.arguments || {});
+  });
 };
 
 const handleToolCall = async (name: string, args: any): Promise<CallToolResult> => {

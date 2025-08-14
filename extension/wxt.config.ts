@@ -20,6 +20,7 @@ export default defineConfig({
   }),
   manifestVersion: 3,
   manifest: {
+    minimum_chrome_version: '120',
     host_permissions: ['<all_urls>'],
     permissions: [
       'storage',
@@ -30,11 +31,13 @@ export default defineConfig({
       'bookmarks',
       'windows',
       'history',
+      'userScripts',
       'nativeMessaging', // Enable communication with native hosts
+      'scripting', // Enable scripting API for early injection
     ],
     content_security_policy: {
       extension_pages:
-        "script-src 'self' 'wasm-unsafe-eval'; object-src 'self'; style-src 'self' 'unsafe-inline' https: http:; font-src 'self' https: data:; connect-src 'self' data: ws: wss: http: https:; img-src 'self' data: https: http:;",
+        "script-src 'self' 'wasm-unsafe-eval' http://localhost:3000 http://localhost:3001; object-src 'self'; style-src 'self' 'unsafe-inline' https: http:; font-src 'self' https: data:; connect-src 'self' data: ws: wss: http: https:; img-src 'self' data: https: http:;",
     },
     action: {
       default_title: 'Open Side Panel',
@@ -59,6 +62,6 @@ export default defineConfig({
   runner: {
     openConsole: true,
     openDevtools: true,
-    startUrls: ['http://localhost:5173'],
+    startUrls: ['http://gmail.com'],
   },
 });
