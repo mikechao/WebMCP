@@ -28,16 +28,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - `pnpm changeset:publish` - Build and publish packages using changesets
 
 ### Examples
-Examples are isolated from the monorepo workspace and have their own dependencies.
+Examples have been moved to a separate repository: https://github.com/WebMCP-org/examples
 
-To run an example:
-```bash
-cd examples/vanilla-ts
-pnpm install --ignore-workspace  # Install dependencies in isolation
-pnpm dev                          # Run the example
-```
-
-Note: Examples are excluded from workspace and use published versions of @mcp-b packages
+To run examples, clone the examples repository and follow the instructions there.
 
 ## High-Level Architecture
 

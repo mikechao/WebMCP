@@ -30,50 +30,18 @@ For a more indepth understanding, refer here: https://mcp-b.ai/blogs
 
 See MCP-B in action right away:
 
-### Run Examples Locally
+### Examples
 
-```bash
-git clone https://github.com/MiguelsPizza/WebMCP.git
-cd WebMCP
-pnpm install
-```
+Check out our examples repository: **[MCP-B Examples](https://github.com/WebMCP-org/examples)**
 
-**Easiest approach** - Use the Chrome Web Store extension:
-
-```bash
-cd examples/vanilla-ts          # or examples/script-tag
-pnpm install --ignore-workspace
-pnpm dev
-```
-
-Just install the [MCP-B Chrome Extension](https://chromewebstore.google.com/detail/mcp-b/daohopfhkdelnpemnhlekblhnikhdhfa) and run your example.
-
-**Development build** (only if you need latest features):
-
-**Terminal 1** - Start MCP-B development environment:
-
-```bash
-pnpm dev:mcp
-```
-
-**Terminal 2** - Run an example:
-
-```bash
-cd examples/vanilla-ts          # or examples/script-tag
-pnpm install --ignore-workspace
-pnpm dev
-```
-
-Available examples:
-
-- **[Vanilla TypeScript Demo](./examples/vanilla-ts/)**: A simple todo app where MCP tools allow AI to manage tasks (e.g., add, update, delete todos). Tools include `getTodos`, `createTodo`, `updateTodo`, and `deleteTodo`.
-
-- **[Script Tag Demo](./examples/script-tag/)**: The simplest integration - add MCP-B to any website using just a script tag, no build tools required.
+The examples repository contains:
+- **Vanilla TypeScript Demo**: A simple todo app where MCP tools allow AI to manage tasks
+- **React Demo**: Modern React application with MCP-B integration
+- **Script Tag Demo**: The simplest integration - add MCP-B to any website using just a script tag
 
 ### Community Examples
 
 - **[Vue ](https://github.com/bestian/vue-MCP-B-demo)** example By [Besian](https://github.com/bestian)
-
 - **[Nuxt 3](https://github.com/mikechao/nuxt3-mcp-b-demo)** example by [Mike Chao](https://github.com/mikechao/)
 
 These demos highlight how MCP-B integrates into websites without needing complex setups. Install the [MCP-B Chrome Extension](https://chromewebstore.google.com/detail/mcp-b/daohopfhkdelnpemnhlekblhnikhdhfa?authuser=0&hl=en) to interact with the tools via the extension's chat interface or tool inspector.
@@ -144,7 +112,7 @@ If you want to contribute to MCP-B or run the examples locally:
    - Update `native-server/.env` with `DEV_EXTENSION_ID=your-extension-id`
    - Restart `pnpm dev`
 
-5. **Run examples** - See the [Run Examples Locally](#run-examples-locally) section above for detailed instructions.
+5. **Run examples** - See the [MCP-B Examples Repository](https://github.com/WebMCP-org/examples) for example applications.
 
 ### Adding MCP-B to Your Existing Website
 
@@ -206,22 +174,13 @@ await server.connect(new TabServerTransport({ allowedOrigins: ["*"] })); // Adju
 
 #### Step 4: Explore Examples
 
-The `./examples/` folder provides ready-to-run starters:
+Check out the **[MCP-B Examples Repository](https://github.com/WebMCP-org/examples)** for ready-to-run starters:
 
 - **vanilla-ts**: Basic todo app. Tools: `createTodo`, `getTodos`, etc. Demonstrates dynamic tool registration and UI updates.
+- **react**: Modern React application with hooks and state management integration.
 - **script-tag**: Simple MCP-B integration using just a script tag - no build tools required.
 
-**To run examples**: See the [Run Examples Locally](#run-examples-locally) section above.
-
-Visit `http://localhost:5173` to see the todo app with MCP tools enabled.
-
-**What the example demonstrates:**
-
-- AI can manage todos with tools scoped to page state
-- Real-time UI updates when tools are called
-- Dynamic tool registration based on app state
-
-Copy patterns from these to your site. Focus on wrapping client-side functions—e.g., use `fetch` with `credentials: 'same-origin'` for authenticated calls.
+Copy patterns from these examples to your site. Focus on wrapping client-side functions—e.g., use `fetch` with `credentials: 'same-origin'` for authenticated calls.
 
 For more, see the [documentation](https://mcp-b.ai).
 
@@ -285,11 +244,17 @@ Test by running a local client (e.g., MCP Inspector) pointed at the URL, then ca
 
 ```
 WebMCP/
-├── examples/                # Starter projects (vanilla-ts, react-shop)
 ├── packages/                # Core libs (@mcp-b/transports, etc.)
 ├── extension/               # Browser extension source
-└── web/                     # Demo site and docs
+└── native-server/           # Native messaging host server
 ```
+
+### Related Repositories
+
+- **[NPM Packages](https://github.com/WebMCP-org/npm-packages)** - Core npm packages (@mcp-b/transports, @mcp-b/mcp-react-hooks, etc.)
+- **[Examples](https://github.com/WebMCP-org/examples)** - Starter projects and demos
+- **[Web Demo](https://github.com/WebMCP-org/web)** - Full-stack demo site with documentation
+- **[WebMCP Userscripts](https://github.com/WebMCP-org/webmcp-userscripts)** - Tampermonkey scripts that inject MCP-B servers into popular websites
 
 ## Troubleshooting
 
@@ -312,7 +277,7 @@ git pull origin main
 # The packages will still build correctly.
 ```
 
-**Example won't start:** See the [Run Examples Locally](#run-examples-locally) section for proper setup instructions.
+**Example won't start:** See the [MCP-B Examples Repository](https://github.com/WebMCP-org/examples) for proper setup instructions.
 
 **Import resolution errors:**
 
@@ -325,7 +290,7 @@ pnpm build:packages
 pnpm dev
 ```
 
-For examples: See the [Run Examples Locally](#run-examples-locally) section.
+For examples: See the [MCP-B Examples Repository](https://github.com/WebMCP-org/examples).
 
 **Port conflicts:**
 
