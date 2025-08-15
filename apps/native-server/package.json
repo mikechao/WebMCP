@@ -35,21 +35,21 @@
   "license": "MIT",
   "dependencies": {
     "@fastify/cors": "^11.0.1",
-    "@mcp-b/transports": "^1.0.1",
-    "@modelcontextprotocol/sdk": "^1.17.1",
+    "@mcp-b/transports": "catalog:",
+    "@modelcontextprotocol/sdk": "catalog:",
     "chalk": "^5.4.1",
     "commander": "^13.1.0",
-    "dotenv": "^17.2.1",
+    "dotenv": "catalog:",
     "fastify": "^5.3.2",
     "is-admin": "^4.0.0",
     "pino": "^9.6.0",
-    "uuid": "^11.1.0"
+    "uuid": "catalog:"
   },
   "devDependencies": {
     "@jest/globals": "^29.7.0",
-    "@types/chrome": "^0.0.318",
+    "@types/chrome": "catalog:",
     "@types/jest": "^29.5.14",
-    "@types/node": "^22.15.3",
+    "@types/node": "catalog:",
     "@types/supertest": "^6.0.3",
     "@typescript-eslint/parser": "^8.31.1",
     "cross-env": "^7.0.3",

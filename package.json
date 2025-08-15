@@ -8,6 +8,9 @@
     "dev": "turbo run dev",
     "build": "turbo run build",
     "dev:mcp": "turbo run dev --filter=@mcp-b/extension --filter=@mcp-b/native-server",
+    "dev:apps": "turbo run dev --filter='./apps/*'",
+    "build:apps": "turbo run build --filter='./apps/*'",
+    "build:shared": "turbo run build --filter='./shared/*'",
     "lint": "biome lint --write .",
     "lint:check": "biome lint .",
     "format": "biome format --write .",
@@ -22,18 +25,7 @@
     "clear-configs": "node scripts/clear-native-configs.js",
     "typecheck": "turbo run typecheck",
     "check-all": "pnpm run typecheck && biome ci --linter-enabled --formatter-enabled .",
-    "publish:packages": "turbo run publish:npm --filter='./packages/*'",
-    "publish:dry": "turbo run publish:dry --filter='./packages/*'",
-    "publish:github": "pnpm publish:packages",
-    "changeset": "changeset",
-    "changeset:version": "changeset version",
-    "changeset:publish": "turbo run build --filter='./packages/*' && changeset publish",
-    "version:patch": "turbo run version:patch --filter='./packages/*'",
-    "version:minor": "turbo run version:minor --filter='./packages/*'",
-    "version:major": "turbo run version:major --filter='./packages/*'",
-    "build:packages": "turbo run build --filter='./packages/*'",
-    "prepare:publish": "turbo run prepare:publish --filter='./packages/*' --filter='./native-server'",
-    "publish:wizard": "./scripts/publish-packages.sh",
+    "prepare:publish": "turbo run prepare:publish --filter='./apps/native-server'",
     "prepare": "husky"
   },
   "engines": {
@@ -48,7 +40,7 @@
     "jiti": "^2.4.2",
     "lint-staged": "^16.1.2",
     "tsup": "catalog:",
-    "tsx": "catalog:",
+    "tsx": "^4.20.0",
     "typescript": "catalog:"
   },
   "dependencies": {

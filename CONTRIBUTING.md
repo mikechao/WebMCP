@@ -8,7 +8,7 @@ Thank you for your interest in contributing to MCP-B! This guide will help you g
 git clone https://github.com/MiguelsPizza/WebMCP.git
 cd WebMCP
 pnpm install
-pnpm build:packages  # Build workspace packages first
+pnpm build:shared  # Build internal shared packages first
 pnpm dev  # Runs all in dev mode
 ```
 
@@ -16,18 +16,21 @@ pnpm dev  # Runs all in dev mode
 
 ```
 WebMCP/
-├── examples/                # Example implementations
-│   └── vanilla-ts/         # Simple todo app demo
-├── packages/               # Core library packages
-│   ├── transports/         # MCP transport implementations
-│   ├── extension-tools/    # Browser extension utilities
-│   ├── mcp-react-hooks/    # React hooks for MCP
-│   └── web-tools/         # Web-specific MCP tools
-├── extension/             # Chrome extension source
-├── native-server/         # Native messaging host
-├── web/                   # Documentation site
-└── e2e-tests/            # End-to-end tests
+├── apps/                    # Application packages
+│   ├── extension/          # Browser extension
+│   ├── backend/            # Backend server (Cloudflare Workers)
+│   └── native-server/      # Native messaging host
+├── shared/                 # Internal shared packages
+│   └── utils/             # Shared utility functions
+└── e2e-tests/             # End-to-end tests
 ```
+
+### External Repositories
+
+- **[NPM Packages](https://github.com/WebMCP-org/npm-packages)** - Core npm packages (@mcp-b/transports, @mcp-b/mcp-react-hooks, etc.)
+- **[Examples](https://github.com/WebMCP-org/examples)** - Example implementations and starter projects
+- **[Web Demo](https://github.com/WebMCP-org/web)** - Documentation site and full-stack demo
+- **[WebMCP Userscripts](https://github.com/WebMCP-org/webmcp-userscripts)** - Tampermonkey scripts for popular websites
 
 ## Development Setup
 
@@ -41,7 +44,7 @@ WebMCP/
 
 ⚠️ **Important**: This project has build order dependencies that must be respected:
 
-1. **Always build packages first**: Run `pnpm build:packages` before other build commands
+1. **Always build shared packages first**: Run `pnpm build:shared` before other build commands
 2. **Postinstall scripts depend on built packages**: The `native-server` package has postinstall scripts that require compiled JavaScript files
 
 ### Common Development Commands
@@ -49,7 +52,7 @@ WebMCP/
 ```bash
 # Install dependencies and build everything
 pnpm install
-pnpm build:packages
+pnpm build:shared
 pnpm build
 
 # Development mode (with hot reload)
@@ -89,18 +92,15 @@ pnpm add -D <package>
 
 ### Creating New Packages
 
-1. Create directory in `packages/`
-2. Add `package.json` with workspace dependencies:
-```json
-{
-  "name": "@mcp-b/your-package",
-  "dependencies": {
-    "@mcp-b/transports": "workspace:*"
-  }
-}
-```
-3. Add to `pnpm-workspace.yaml` if needed
+For **internal shared packages**:
+1. Create directory in `shared/`
+2. Add `package.json` with workspace dependencies
+3. Configure TypeScript with ESM-only output
 4. Run `pnpm install` to link workspaces
+
+For **NPM packages**:
+1. Contribute to the [npm-packages repository](https://github.com/WebMCP-org/npm-packages)
+2. Follow the contribution guidelines in that repository
 
 ## GitHub Actions & CI/CD
 
@@ -109,7 +109,7 @@ pnpm add -D <package>
 The CI pipeline has been optimized to handle build order dependencies:
 
 1. **Install with `--ignore-scripts`**: Prevents postinstall scripts from running before packages are built
-2. **Build packages first**: `pnpm build:packages` builds all workspace packages
+2. **Build shared packages first**: `pnpm build:shared` builds all internal shared packages
 3. **Run postinstall scripts**: `pnpm rebuild` runs any skipped postinstall scripts
 4. **Complete build**: `pnpm build` builds applications (extension, web app, etc.)
 5. **Type check**: `pnpm typecheck` verifies TypeScript types
@@ -149,18 +149,18 @@ act -W .github/workflows/ci.yml -j typecheck --container-architecture linux/amd6
 
 ```bash
 # Build for development
-cd extension
+cd apps/extension
 pnpm build
 
 # Build for production
-cd extension
+cd apps/extension
 pnpm build --mode production
 
 # Load in Chrome for testing
 # 1. Open chrome://extensions/
 # 2. Enable Developer Mode
 # 3. Click "Load unpacked"
-# 4. Select extension/.output/chrome-mv3/
+# 4. Select apps/extension/.output/chrome-mv3/
 ```
 
 ### Extension Architecture
@@ -178,13 +178,13 @@ The native server enables communication between the browser extension and local 
 ### Building and Testing
 
 ```bash
-cd native-server
+cd apps/native-server
 pnpm build
 pnpm dev  # Watch mode with auto-rebuild
 
 # Install globally for testing
 npm install -g .
-mcp-chrome-bridge register  # Register with Chrome
+@mcp-b/native-server register  # Register with Chrome
 ```
 
 ### Postinstall Script
@@ -217,7 +217,7 @@ E2E tests use Playwright and test:
 
 1. **Build everything**: `pnpm build`
 2. **Load extension** in Chrome (see extension development section)
-3. **Run example apps**: `cd examples/vanilla-ts && pnpm dev`
+3. **Run example apps**: Clone the [examples repository](https://github.com/WebMCP-org/examples) and follow the instructions there
 4. **Test tool execution** via extension chat or inspector
 
 ## Debugging

@@ -6,8 +6,10 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ### Development Setup
 - `pnpm install` - Install all dependencies across the monorepo
-- `pnpm build:packages` - Build all workspace packages (required before running examples)
+- `pnpm build:shared` - Build all shared internal packages
+- `pnpm build:apps` - Build all applications (extension, backend, native-server)
 - `pnpm dev` - Start all development servers with automatic native messaging registration
+- `pnpm dev:apps` - Start development servers for all apps
 
 ### Build and Quality
 - `pnpm build` - Build all projects in the monorepo
@@ -22,10 +24,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - `pnpm test:e2e` - Run end-to-end tests using Playwright
 - For specific e2e tests: `cd e2e-tests && pnpm test:basic` or `pnpm test:mcp`
 
-### Package Management
-- `pnpm publish:packages` - Publish all workspace packages to npm
-- `pnpm changeset` - Create changesets for version management
-- `pnpm changeset:publish` - Build and publish packages using changesets
+### NPM Packages
+NPM packages have been moved to a separate repository: https://github.com/WebMCP-org/npm-packages
 
 ### Examples
 Examples have been moved to a separate repository: https://github.com/WebMCP-org/examples
@@ -42,31 +42,31 @@ This is MCP-B: a browser-native implementation of the Model Context Protocol (MC
 
 ### Key Components
 
-#### 1. Transport Layer (`packages/transports/`)
+#### 1. Transport Layer ([@mcp-b/transports](https://github.com/WebMCP-org/npm-packages))
 The heart of MCP-B, providing browser-specific transport implementations:
 - **TabServerTransport/TabClientTransport**: Uses `postMessage` for same-tab communication
 - **ExtensionServerTransport/ExtensionClientTransport**: Uses Chrome runtime messaging for extension communication
 - **NativeServerTransport/NativeClientTransport**: Bridges browser to local MCP clients
 
-#### 2. Browser Extension (`extension/`)
+#### 2. Browser Extension (`apps/extension/`)
 Built with WXT framework, acts as MCP client:
 - **Background service**: Manages connections to websites and native hosts
 - **Sidepanel**: React-based UI with chat interface and tool inspector
 - **Content scripts**: Inject MCP clients into web pages
 - Uses Assistant UI (@assistant-ui/react) for chat interfaces
 
-#### 3. Web Tools & Extension Tools (`packages/`)
+#### 3. Web Tools & Extension Tools ([NPM Packages](https://github.com/WebMCP-org/npm-packages))
 - **@mcp-b/web-tools**: MCP tools for web APIs (like Prompt API)
 - **@mcp-b/extension-tools**: Auto-generated MCP tools for Chrome Extension APIs
 - **@mcp-b/mcp-react-hooks**: React hooks for MCP integration
 
-#### 4. Demo Website (`web/`)
+#### 4. Demo Website ([WebMCP-org/web](https://github.com/WebMCP-org/web))
 Full-stack demo showcasing MCP-B capabilities:
 - **Frontend**: React with MCP server exposing todo management tools
 - **Backend**: Cloudflare Workers with Hono.js and PostgreSQL
 - **Real-time sync**: ElectricSQL for live data updates
 
-#### 5. Native Host (`native-server/`)
+#### 5. Native Host (`apps/native-server/`)
 Node.js server that bridges browser extension to local MCP clients:
 - HTTP server on port 12306
 - Proxies requests from desktop apps (Claude Desktop, Cursor) to browser
@@ -88,7 +88,7 @@ Node.js server that bridges browser extension to local MCP clients:
 ## Development Workflow
 
 ### Adding New Transport Types
-Transport implementations live in `packages/transports/src/` and must implement the MCP transport interface.
+Transport implementations live in the [@mcp-b/transports](https://github.com/WebMCP-org/npm-packages) package and must implement the MCP transport interface.
 
 ### Creating New Tools
 - For websites: Use `@mcp-b/transports` with `TabServerTransport`
@@ -125,8 +125,8 @@ The development workflow is fully automated with configurable extension IDs:
    pnpm install
    
    # Optional: Configure your development extension ID
-   cp native-server/.env.example native-server/.env
-   # Edit native-server/.env with your extension ID if different
+   cp apps/native-server/.env.example apps/native-server/.env
+   # Edit apps/native-server/.env with your extension ID if different
    
    pnpm dev
    ```
@@ -136,19 +136,19 @@ The development workflow is fully automated with configurable extension IDs:
    - Open Chrome at `chrome://extensions/`
    - Enable "Developer mode"
    - Find your MCP-B extension and copy the ID
-   - Update `native-server/.env` with `DEV_EXTENSION_ID=your-extension-id`
+   - Update `apps/native-server/.env` with `DEV_EXTENSION_ID=your-extension-id`
    - Restart `pnpm dev`
 
 3. **What `pnpm dev` does automatically:**
    - Builds all packages and the native server
-   - Loads extension ID from `native-server/.env` (git-ignored)
+   - Loads extension ID from `apps/native-server/.env` (git-ignored)
    - Registers native messaging host for both production and dev extension IDs
-   - Starts WXT with a persistent profile (`extension/.wxt/chrome-data`)
+   - Starts WXT with a persistent profile (`apps/extension/.wxt/chrome-data`)
    - Launches the extension in Chrome
 
 4. **Extension ID Management:**
    - Production extension ID: `mhipkdochajohklmmjinmicahanmldbj` (hardcoded)
-   - Development extension ID: Configurable via `native-server/.env` (git-ignored)
+   - Development extension ID: Configurable via `apps/native-server/.env` (git-ignored)
    - Default dev ID: `oeidgnbdmdjeacgmfhemhpngaplpkiel`
    - Both IDs are included in all native messaging manifests
 
@@ -156,7 +156,7 @@ The development workflow is fully automated with configurable extension IDs:
    - Browser data persists between dev sessions
    - Native messaging manifests are found correctly
    - Can install devtools extensions and remember logins
-   - Configured via `extension/web-ext.config.ts`
+   - Configured via `apps/extension/web-ext.config.ts`
 
 #### Manual Registration (if needed)
 - Run `pnpm --filter @mcp-b/native-server run register:dev`
@@ -166,14 +166,33 @@ The development workflow is fully automated with configurable extension IDs:
 If you still get "Access to the specified native messaging host is forbidden":
 - Ensure `pnpm dev` completed successfully
 - Check that manifests exist in the persistent profile directory:
-  - `extension/.wxt/chrome-data/NativeMessagingHosts/com.chromemcp.nativehost.json`
+  - `apps/extension/.wxt/chrome-data/NativeMessagingHosts/com.chromemcp.nativehost.json`
 
 ## Important Implementation Notes
 
 ### Monorepo Structure
+
+```
+WebMCP/
+├── apps/                    # Application packages
+│   ├── extension/          # Browser extension
+│   ├── backend/            # Backend server (Cloudflare Workers)
+│   └── native-server/      # Native messaging host
+├── shared/                 # Internal shared packages
+│   └── utils/             # Shared utility functions
+├── e2e-tests/             # End-to-end tests
+└── scripts/               # Build and maintenance scripts
+```
+
+### External Repositories
+- **[npm-packages](https://github.com/WebMCP-org/npm-packages)** - Published NPM packages
+- **[examples](https://github.com/WebMCP-org/examples)** - Example applications
+- **[web](https://github.com/WebMCP-org/web)** - Demo website
+- **[webmcp-userscripts](https://github.com/WebMCP-org/webmcp-userscripts)** - Tampermonkey userscripts
+
 - Uses pnpm workspaces with Turbo for task orchestration
-- Packages have interdependencies requiring proper build order
-- `build:packages` must run before examples work
+- Apps and shared packages have interdependencies requiring proper build order
+- `build:shared` must run before building apps
 
 ### Extension Permissions
 Extension requires broad permissions for Chrome API access. Tools are scoped appropriately in implementation.

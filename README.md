@@ -78,6 +78,7 @@ If you want to contribute to MCP-B or run the examples locally:
    git clone https://github.com/MiguelsPizza/WebMCP.git
    cd WebMCP
    pnpm install
+   pnpm build:shared  # Build internal shared packages
    ```
 
    Note: Some postinstall scripts may fail initially - this is normal.
@@ -86,8 +87,8 @@ If you want to contribute to MCP-B or run the examples locally:
 
    ```bash
    # If your extension ID differs from the default
-   cp native-server/.env.example native-server/.env
-   # Edit native-server/.env with your extension ID
+   cp apps/native-server/.env.example apps/native-server/.env
+   # Edit apps/native-server/.env with your extension ID
    ```
 
 3. **Start development:**
@@ -109,7 +110,7 @@ If you want to contribute to MCP-B or run the examples locally:
    - Open Chrome at `chrome://extensions/`
    - Enable "Developer mode"
    - Find your MCP-B extension and copy the ID
-   - Update `native-server/.env` with `DEV_EXTENSION_ID=your-extension-id`
+   - Update `apps/native-server/.env` with `DEV_EXTENSION_ID=your-extension-id`
    - Restart `pnpm dev`
 
 5. **Run examples** - See the [MCP-B Examples Repository](https://github.com/WebMCP-org/examples) for example applications.
@@ -203,11 +204,11 @@ Once installed:
 For the latest features or custom modifications:
 
 1. Clone the repo: `git clone https://github.com/MiguelsPizza/WebMCP.git`.
-2. Install: `cd WebMCP && pnpm install`.
-3. Build the extension: `pnpm --filter extension build`.
-4. Load in Chrome: Go to `chrome://extensions/`, enable Developer Mode, and load `./extension/.output/chrome-mv3` unpacked.
+2. Install: `cd WebMCP && pnpm install && pnpm build:shared`.
+3. Build the extension: `pnpm --filter @mcp-b/extension build`.
+4. Load in Chrome: Go to `chrome://extensions/`, enable Developer Mode, and load `./apps/extension/.output/chrome-mv3` unpacked.
 
-Run in dev mode for hot reloading: `pnpm --filter extension dev`.
+Run in dev mode for hot reloading: `pnpm --filter @mcp-b/extension dev`.
 
 ## Hooking Up the Native Server
 
@@ -244,9 +245,13 @@ Test by running a local client (e.g., MCP Inspector) pointed at the URL, then ca
 
 ```
 WebMCP/
-├── packages/                # Core libs (@mcp-b/transports, etc.)
-├── extension/               # Browser extension source
-└── native-server/           # Native messaging host server
+├── apps/                    # Application packages
+│   ├── extension/          # Browser extension
+│   ├── backend/            # Backend server (Cloudflare Workers)
+│   └── native-server/      # Native messaging host
+├── shared/                 # Internal shared packages
+│   └── utils/             # Shared utility functions
+└── e2e-tests/             # End-to-end tests
 ```
 
 ### Related Repositories
@@ -273,7 +278,7 @@ git pull origin main
 
 ```bash
 # These errors during pnpm install are normal and can be ignored:
-# "Cannot find module '/path/to/native-server/dist/scripts/postinstall.js'"
+# "Cannot find module '/path/to/apps/native-server/dist/scripts/postinstall.js'"
 # The packages will still build correctly.
 ```
 
@@ -285,7 +290,8 @@ For monorepo development:
 
 ```bash
 # Ensure the workspace is properly built:
-pnpm build:packages
+pnpm build:shared  # Build internal shared packages
+pnpm build:apps     # Build all applications
 # Or run from the root with workspace support:
 pnpm dev
 ```
@@ -319,7 +325,7 @@ For examples: See the [MCP-B Examples Repository](https://github.com/WebMCP-org/
 git clone https://github.com/MiguelsPizza/WebMCP.git
 cd WebMCP
 pnpm install
-pnpm build:packages  # Build workspace packages first
+pnpm build:shared  # Build internal shared packages first
 pnpm dev  # Runs all in dev mode
 ```
 
