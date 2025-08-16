@@ -3,7 +3,7 @@ import { ThreadList } from '@/entrypoints/sidepanel/components/assistant-ui/thre
 import { ToolSelector } from '@/entrypoints/sidepanel/components/tool-selector';
 import { Button } from '@/entrypoints/sidepanel/components/ui/button';
 import { AssistantRuntimeProvider } from '@assistant-ui/react';
-import { useChatRuntime } from '@assistant-ui/react-ai-sdk';
+import { AssistantChatTransport, useChatRuntime } from '@assistant-ui/react-ai-sdk';
 import { McpClientProvider } from '@mcp-b/mcp-react-hooks';
 import { createFileRoute } from '@tanstack/react-router';
 import {
@@ -14,21 +14,17 @@ import {
   Settings2Icon,
 } from 'lucide-react';
 import { useEffect, useState } from 'react';
+// import { AssistantChatTransport } from '../components/assistant-ui/AssistantChatTransport';
 import { client, transport } from '../lib/client';
-import { config } from '../lib/config';
 
 const Chat = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isToolSelectorOpen, setIsToolSelectorOpen] = useState(false);
+  // Example 1: Custom API URL while keeping system/tools forwarding
   const runtime = useChatRuntime({
-    api: 'http://localhost:8787/api/chat',
-    maxSteps: 100,
-    onError: (error) => {
-      if (config.features.enableDebugLogging) {
-        console.error('[Chat] Error:', error);
-      }
-      throw error;
-    },
+    transport: new AssistantChatTransport({
+      api: 'http://localhost:8787/api/chat', // Custom API URL with forwarding
+    }),
   });
 
   // Allow other components to open the tool selector via a window event
