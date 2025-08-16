@@ -2,6 +2,11 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## Prerequisites
+- Node.js >=22.12 (recommended: 24.3.0 per .nvmrc)
+- pnpm ^10
+- Chrome browser for extension development
+
 ## Essential Commands
 
 ### Development Setup
@@ -10,9 +15,10 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - `pnpm build:apps` - Build all applications (extension, backend, native-server)
 - `pnpm dev` - Start all development servers with automatic native messaging registration
 - `pnpm dev:apps` - Start development servers for all apps
+- `pnpm dev:mcp` - Start only extension and native-server (useful for MCP development)
 
 ### Build and Quality
-- `pnpm build` - Build all projects in the monorepo
+- `pnpm build` - Build all projects in the monorepo (runs build:packages first, then builds apps)
 - `pnpm typecheck` - Type-check all TypeScript files across the workspace
 - `pnpm lint` - Run Biome linter with auto-fix
 - `pnpm format` - Format code with Biome
@@ -20,9 +26,30 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - `pnpm check-all` - Complete quality check (typecheck + biome ci)
 
 ### Testing
-- `pnpm test` - Run all tests across the monorepo with Turbo
+- `pnpm test` - Run all tests across the monorepo with Turbo (uses Vitest for unit tests)
 - `pnpm test:e2e` - Run end-to-end tests using Playwright
+- `pnpm --filter @mcp-b/e2e-tests test:ui` - Run E2E tests with UI
+- `pnpm --filter @mcp-b/e2e-tests test:debug` - Debug E2E tests
+- `pnpm --filter @mcp-b/e2e-tests test:headed` - Run tests with browser visible
 - For specific e2e tests: `cd e2e-tests && pnpm test:basic` or `pnpm test:mcp`
+
+### Extension Development
+- `pnpm --filter @mcp-b/extension dev:firefox` - Run extension in Firefox
+- `pnpm --filter @mcp-b/extension build:firefox` - Build for Firefox
+- `pnpm --filter @mcp-b/extension zip` - Create extension zip for distribution
+- `pnpm --filter @mcp-b/extension test:ui` - Run tests with UI
+- `pnpm --filter @mcp-b/extension compile` - Type check without emit
+
+### Deployment and Release
+- `pnpm --filter @mcp-b/backend deploy` - Deploy backend to Cloudflare Workers
+- `pnpm --filter @mcp-b/backend cf-typegen` - Generate Cloudflare types
+- `pnpm changeset` - Create a changeset for version management
+- `pnpm changeset:version` - Update versions based on changesets
+- `pnpm changeset:publish` - Publish packages to npm
+
+### Cleanup
+- `pnpm clean` - Clean git artifacts (.cache, .turbo, node_modules)
+- `pnpm clear-configs` - Clear native messaging configurations
 
 ### NPM Packages
 NPM packages have been moved to a separate repository: https://github.com/WebMCP-org/npm-packages
@@ -100,18 +127,30 @@ Transport implementations live in the [@mcp-b/transports](https://github.com/Web
 - Uses React with Tailwind CSS and Shadcn UI
 - Background scripts manage MCP connections
 - Sidepanel provides user interface
+- Extension environment configuration via `apps/extension/.env` file
+- Production extension ID: `daohopfhkdelnpemnhlekblhnikhdhfa` (Chrome Web Store)
 
 ### Testing Strategy
-- Unit tests with Vitest (extension)
-- E2E tests with Playwright testing real extension functionality
+- Unit tests with **Vitest** for extension code
+- E2E tests with **Playwright** testing real extension functionality
+- Test libraries: `@testing-library/react`, `jsdom` for extension tests
 - Manual testing with example applications
+- Run `pnpm test` for all tests or filter specific packages
+
+### Code Quality Tools
+- **Biome** for linting and formatting (replaces ESLint/Prettier)
+- **Turbo** for monorepo task orchestration
+- **Husky** for git hooks (commit-msg, pre-commit)
+- **Commitlint** for conventional commit messages
+- Automated quality checks on commit via git hooks
 
 ### Package Publishing
 Uses changesets for version management:
 1. Make changes
 2. Run `pnpm changeset` to document changes
 3. Run `pnpm changeset:version` to update versions
-4. Run `pnpm changeset:publish` to publish
+4. Run `pnpm changeset:publish` to publish to npm
+5. Native-server is published as `@mcp-b/native-server` on npm
 
 ### Native Messaging Setup
 
@@ -175,24 +214,26 @@ If you still get "Access to the specified native messaging host is forbidden":
 ```
 WebMCP/
 ├── apps/                    # Application packages
-│   ├── extension/          # Browser extension
+│   ├── extension/          # Browser extension (Chrome/Firefox)
 │   ├── backend/            # Backend server (Cloudflare Workers)
-│   └── native-server/      # Native messaging host
+│   └── native-server/      # Native messaging host (Node.js, port 12306)
 ├── shared/                 # Internal shared packages
 │   └── utils/             # Shared utility functions
-├── e2e-tests/             # End-to-end tests
+├── e2e-tests/             # End-to-end tests with Playwright
 └── scripts/               # Build and maintenance scripts
 ```
 
 ### External Repositories
-- **[npm-packages](https://github.com/WebMCP-org/npm-packages)** - Published NPM packages
+- **[npm-packages](https://github.com/WebMCP-org/npm-packages)** - Published NPM packages (@mcp-b/transports, @mcp-b/web-tools, etc.)
 - **[examples](https://github.com/WebMCP-org/examples)** - Example applications
-- **[web](https://github.com/WebMCP-org/web)** - Demo website
+- **[web](https://github.com/WebMCP-org/web)** - Demo website with todo app
 - **[webmcp-userscripts](https://github.com/WebMCP-org/webmcp-userscripts)** - Tampermonkey userscripts
 
+### Build Dependencies
 - Uses pnpm workspaces with Turbo for task orchestration
 - Apps and shared packages have interdependencies requiring proper build order
-- `build:shared` must run before building apps
+- **Critical**: `build:shared` or `build:packages` must run before building apps
+- Workspace uses pnpm catalog for centralized dependency version management
 
 ### Extension Permissions
 Extension requires broad permissions for Chrome API access. Tools are scoped appropriately in implementation.
@@ -204,3 +245,9 @@ Extension requires broad permissions for Chrome API access. Tools are scoped app
 
 ### Tool Naming Convention
 Recent migration to domain-prefixed tool names (e.g., `domain_com_toolName`) for multi-tab disambiguation.
+
+### Backend Infrastructure
+- Cloudflare Workers with Hono.js framework
+- PostgreSQL database for persistent storage
+- ElectricSQL for real-time data synchronization
+- Deploy with `pnpm --filter @mcp-b/backend deploy`

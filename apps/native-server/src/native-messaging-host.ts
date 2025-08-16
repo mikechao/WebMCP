@@ -1,8 +1,7 @@
-import { NativeMessageType } from '@mcp-b/transports';
 import type { Tool } from '@modelcontextprotocol/sdk/types.js';
 import { stdin, stdout } from 'process';
 import { v4 as uuidv4 } from 'uuid';
-import { TIMEOUTS } from './constant';
+import { NativeMessageType, TIMEOUTS } from './constant';
 import type { Server } from './server';
 
 interface PendingRequest {
