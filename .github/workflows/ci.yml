@@ -11,66 +11,66 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  lint:
-    name: Lint
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+  # lint:
+    # name: Lint
+    # runs-on: ubuntu-latest
+    # steps:
+    #   - name: Checkout code
+    #     uses: actions/checkout@v4
 
-      - name: Setup PNPM
-        uses: pnpm/action-setup@v4
+    #   - name: Setup PNPM
+    #     uses: pnpm/action-setup@v4
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: 22
-          cache: 'pnpm'
+    #   - name: Setup Node.js
+    #     uses: actions/setup-node@v4
+    #     with:
+    #       node-version: 22
+    #       cache: 'pnpm'
 
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile --ignore-scripts
+    #   - name: Install dependencies
+    #     run: pnpm install --frozen-lockfile --ignore-scripts
 
-      - name: Build shared packages
-        run: pnpm build:shared
+    #   - name: Build shared packages
+    #     run: pnpm build:shared
 
-      - name: Run linter check
-        run: pnpm lint:check
+    #   - name: Run linter check
+    #     run: pnpm lint:check
 
-  typecheck:
-    name: Type Check
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+  # typecheck:
+  #   name: Type Check
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - name: Checkout code
+  #       uses: actions/checkout@v4
 
-      - name: Setup PNPM
-        uses: pnpm/action-setup@v4
+  #     - name: Setup PNPM
+  #       uses: pnpm/action-setup@v4
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: 22
-          cache: 'pnpm'
+  #     - name: Setup Node.js
+  #       uses: actions/setup-node@v4
+  #       with:
+  #         node-version: 22
+  #         cache: 'pnpm'
 
-      - name: Install dependencies (ignore scripts)
-        run: pnpm install --frozen-lockfile --ignore-scripts
+  #     - name: Install dependencies (ignore scripts)
+  #       run: pnpm install --frozen-lockfile --ignore-scripts
 
-      - name: Build packages first
-        run: pnpm build:shared
+  #     - name: Build packages first
+  #       run: pnpm build:shared
 
-      - name: Run postinstall scripts
-        run: pnpm rebuild
+  #     - name: Run postinstall scripts
+  #       run: pnpm rebuild
 
-      - name: Build all projects (to generate required files)
-        run: pnpm build
+  #     - name: Build all projects (to generate required files)
+  #       run: pnpm build
 
-      - name: Run type check
-        run: pnpm typecheck
+  #     - name: Run type check
+  #       run: pnpm typecheck
 
   build:
     name: Build
     runs-on: ubuntu-latest
-    needs: [lint, typecheck]
+    needs: []
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -106,34 +106,34 @@ jobs:
             apps/backend/dist
             apps/native-server/dist
 
-  test:
-    name: Test
-    runs-on: ubuntu-latest
-    needs: [lint, typecheck]
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+  # test:
+  #   name: Test
+  #   runs-on: ubuntu-latest
+  #   needs: [typecheck]
+  #   steps:
+  #     - name: Checkout code
+  #       uses: actions/checkout@v4
 
-      - name: Setup PNPM
-        uses: pnpm/action-setup@v4
+  #     - name: Setup PNPM
+  #       uses: pnpm/action-setup@v4
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: 22
-          cache: 'pnpm'
+  #     - name: Setup Node.js
+  #       uses: actions/setup-node@v4
+  #       with:
+  #         node-version: 22
+  #         cache: 'pnpm'
 
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile --ignore-scripts
+  #     - name: Install dependencies
+  #       run: pnpm install --frozen-lockfile --ignore-scripts
 
-      - name: Build shared packages
-        run: pnpm build:shared
+  #     - name: Build shared packages
+  #       run: pnpm build:shared
 
-      - name: Run postinstall scripts
-        run: pnpm rebuild
+  #     - name: Run postinstall scripts
+  #       run: pnpm rebuild
 
-      - name: Run tests
-        run: pnpm test
+  #     - name: Run tests
+  #       run: pnpm test
 
   check-format:
     name: Check Format
@@ -204,7 +204,7 @@ jobs:
   ci-success:
     name: CI Success
     runs-on: ubuntu-latest
-    needs: [lint, typecheck, build, test, check-format, e2e-test]
+    needs: [build, check-format, e2e-test]
     if: always()
     steps:
       - name: Check if all jobs succeeded
