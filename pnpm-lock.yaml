@@ -365,9 +365,6 @@ importers:
       '@fastify/cors':
         specifier: ^11.0.1
         version: 11.1.0
-      '@mcp-b/transports':
-        specifier: 'catalog:'
-        version: 1.0.3(@modelcontextprotocol/sdk@1.15.0)
       '@modelcontextprotocol/sdk':
         specifier: 'catalog:'
         version: 1.15.0

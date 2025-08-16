@@ -45,3 +45,24 @@ export const ERROR_MESSAGES = {
   MCP_REQUEST_PROCESSING_ERROR: 'Internal server error during MCP request processing.',
   INVALID_SSE_SESSION: 'Invalid or missing MCP session ID for SSE.',
 } as const;
+
+export enum NativeMessageType {
+  START = 'start',
+  STARTED = 'started',
+  STOP = 'stop',
+  STOPPED = 'stopped',
+  PING = 'ping',
+  PONG = 'pong',
+  ERROR = 'error',
+  LIST_TOOLS = 'list_tools',
+  CALL_TOOL = 'call_tool',
+  TOOL_LIST_UPDATED = 'tool_list_updated',
+  TOOL_LIST_UPDATED_ACK = 'tool_list_updated_ack',
+  PROCESS_DATA = 'process_data',
+  SERVER_STARTED = 'server_started',
+  SERVER_STOPPED = 'server_stopped',
+  ERROR_FROM_NATIVE_HOST = 'error_from_native_host',
+  CONNECT_NATIVE = 'connectNative',
+  PING_NATIVE = 'ping_native',
+  DISCONNECT_NATIVE = 'disconnect_native',
+}

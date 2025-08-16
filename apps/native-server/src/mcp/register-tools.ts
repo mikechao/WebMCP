@@ -1,4 +1,3 @@
-import { NativeMessageType } from '@mcp-b/transports';
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import {
   CallToolRequestSchema,
@@ -7,6 +6,7 @@ import {
   Tool,
 } from '@modelcontextprotocol/sdk/types.js';
 import * as fs from 'fs';
+import { NativeMessageType } from '../constant';
 import nativeMessagingHostInstance from '../native-messaging-host';
 import { executeScriptToolOverride, registerUserscriptToolOverride } from './inject-user-mcp';
 
