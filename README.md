@@ -6,7 +6,7 @@
 
 [![Chrome Web Store](https://img.shields.io/chrome-web-store/v/daohopfhkdelnpemnhlekblhnikhdhfa?style=flat-square&label=Chrome%20Extension)](https://chromewebstore.google.com/detail/mcp-b/daohopfhkdelnpemnhlekblhnikhdhfa)
 [![npm version](https://img.shields.io/npm/v/@mcp-b/transports?style=flat-square)](https://www.npmjs.com/package/@mcp-b/transports)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=flat-square)](https://opensource.org/licenses/MIT)
+[![License: AGPL v3](https://img.shields.io/badge/License-AGPL%20v3-blue.svg?style=flat-square)](https://www.gnu.org/licenses/agpl-3.0)
 [![Build Status](https://img.shields.io/github/actions/workflow/status/MiguelsPizza/WebMCP/ci.yml?style=flat-square)](https://github.com/MiguelsPizza/WebMCP/actions)
 [![GitHub stars](https://img.shields.io/github/stars/MiguelsPizza/WebMCP?style=flat-square)](https://github.com/MiguelsPizza/WebMCP/stargazers)
 
@@ -354,8 +354,8 @@ Contributions welcome! Focus on transports, examples, or docs. See [CONTRIBUTING
 
 ## License
 
-MIT - see [LICENSE](./LICENSE).
+AGPL-3.0 - see [LICENSE](./LICENSE).
 
-Created by [@miguelsPizza](https://github.com/miguelsPizza). Reach out: alexnahasdev@gmail.com.
+Created by Alexander Nahas ([@miguelsPizza](https://github.com/miguelsPizza)). Reach out: alexnahasdev@gmail.com.
 
 [Website](https://mcp-b.ai) • [GitHub](https://github.com/MiguelsPizza/WebMCP)

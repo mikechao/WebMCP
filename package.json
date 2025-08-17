@@ -3,6 +3,8 @@
   "private": true,
   "version": "0.0.0",
   "type": "module",
+  "license": "AGPL-3.0",
+  "author": "Alexander Nahas",
   "packageManager": "pnpm@10.12.1",
   "scripts": {
     "dev": "turbo run dev",
