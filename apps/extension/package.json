@@ -3,7 +3,7 @@
   "description": "AI-powered browser assistant with Model Context Protocol integration for enhanced web interactions",
   "private": true,
   "version": "0.0.4",
-  "license": "MIT",
+  "license": "AGPL-3.0",
   "type": "module",
   "engines": {
     "node": ">=22"

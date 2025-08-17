@@ -31,8 +31,8 @@
     "chrome",
     "browser"
   ],
-  "author": "hangye",
-  "license": "MIT",
+  "author": "Alexander Nahas",
+  "license": "AGPL-3.0",
   "dependencies": {
     "@fastify/cors": "^11.0.1",
     "@modelcontextprotocol/sdk": "catalog:",
