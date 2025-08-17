@@ -8,17 +8,17 @@
     "cf-typegen": "wrangler types --env-interface CloudflareBindings"
   },
   "dependencies": {
-    "@ai-sdk/anthropic": "^2.0.4",
-    "@ai-sdk/openai": "^2.0.15",
-    "@assistant-ui/react-ai-sdk": "^1.0.2",
+    "ai": "^4.3.19",
+    "@ai-sdk/openai": "catalog:",
+    "@ai-sdk/anthropic": "catalog:",
     "@hono/zod-validator": "^0.5.0",
-    "ai": "^5.0.15",
+    "@assistant-ui/react-ai-sdk": "^0.11.1",
     "dotenv": "catalog:",
     "hono": "^4.9.2",
-    "json-schema": "catalog:",
     "uuid": "catalog:",
-    "zod": "^4.0.17",
-    "zod-to-json-schema": "^3.24.1"
+    "zod": "catalog:",
+    "zod-to-json-schema": "^3.24.1",
+    "json-schema": "catalog:"
   },
   "devDependencies": {
     "@types/json-schema": "catalog:",
