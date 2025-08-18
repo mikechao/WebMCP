@@ -35,7 +35,7 @@ const FancyToolRenderer = ({ tool }: { tool: McpTool }) => {
       // }
 
       if (status.type === 'incomplete' && status.reason === 'error') {
-        return <ToolErrorUI tool={tool} status={status} />;
+        return <ToolErrorUI tool={tool} status={status} args={args} />;
       }
 
       if (status.type === 'complete') {
@@ -47,7 +47,7 @@ const FancyToolRenderer = ({ tool }: { tool: McpTool }) => {
             reason: 'error',
             error: new Error(errorText),
           };
-          return <ToolErrorUI tool={tool} status={errorStatus} />;
+          return <ToolErrorUI tool={tool} status={errorStatus} args={args} />;
         }
 
         // Fallback: Check if the result content contains error messages (for legacy compatibility)
@@ -65,10 +65,10 @@ const FancyToolRenderer = ({ tool }: { tool: McpTool }) => {
             reason: 'error',
             error: new Error(resultText),
           };
-          return <ToolErrorUI tool={tool} status={errorStatus} />;
+          return <ToolErrorUI tool={tool} status={errorStatus} args={args} />;
         }
 
-        return <ToolSuccessUI tool={tool} result={result} />;
+        return <ToolSuccessUI tool={tool} result={result} args={args} />;
       }
 
       return null;
