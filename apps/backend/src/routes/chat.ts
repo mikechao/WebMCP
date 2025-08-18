@@ -1,7 +1,7 @@
 import { anthropic } from '@ai-sdk/anthropic';
 import { openai } from '@ai-sdk/openai';
 import { zValidator } from '@hono/zod-validator';
-import { convertToModelMessages, streamText } from 'ai';
+import { convertToModelMessages, stepCountIs, streamText } from 'ai';
 
 import { frontendTools } from '@assistant-ui/react-ai-sdk';
 import { Context, Env, Hono } from 'hono';
@@ -53,6 +53,8 @@ const chat = new Hono<{ Bindings: Env }>().post(
 
       system,
       messages: convertToModelMessages(messages),
+
+      stopWhen: stepCountIs(100),
       tools: {
         ...frontendTools(tools),
       },

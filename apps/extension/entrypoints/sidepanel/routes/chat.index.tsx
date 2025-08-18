@@ -4,6 +4,7 @@ import { ToolSelector } from '@/entrypoints/sidepanel/components/tool-selector';
 import { Button } from '@/entrypoints/sidepanel/components/ui/button';
 import { AssistantRuntimeProvider } from '@assistant-ui/react';
 import { AssistantChatTransport, useChatRuntime } from '@assistant-ui/react-ai-sdk';
+import { lastAssistantMessageIsCompleteWithToolCalls } from 'ai';
 import { McpClientProvider } from '@mcp-b/mcp-react-hooks';
 import { createFileRoute } from '@tanstack/react-router';
 import {
@@ -20,14 +21,14 @@ import { client, transport } from '../lib/client';
 const Chat = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isToolSelectorOpen, setIsToolSelectorOpen] = useState(false);
-  // Example 1: Custom API URL while keeping system/tools forwarding
+
+  // // Example 1: Custom API URL while keeping system/tools forwarding
   const runtime = useChatRuntime({
     transport: new AssistantChatTransport({
       api: 'http://localhost:8787/api/chat', // Custom API URL with forwarding
     }),
-  });
-
-  // Allow other components to open the tool selector via a window event
+    sendAutomaticallyWhen: (messages) => lastAssistantMessageIsCompleteWithToolCalls(messages),
+  }); // Allow other components to open the tool selector via a window event
   useEffect(() => {
     const handler = () => setIsToolSelectorOpen(true);
     window.addEventListener('open-tool-selector', handler as EventListener);

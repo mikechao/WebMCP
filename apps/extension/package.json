@@ -82,7 +82,7 @@
     "tailwind-merge": "^3.2.0",
     "tailwindcss": "^4.1.7",
     "tw-animate-css": "^1.2.4",
-    "zod": "catalog:",
+    "zod": "3.25.76",
     "zod-from-json-schema": "^0.4.2"
   },
   "devDependencies": {
