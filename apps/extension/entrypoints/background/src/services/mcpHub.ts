@@ -6,6 +6,8 @@ import type { CallToolResult, Tool } from '@modelcontextprotocol/sdk/types.js';
 import { z } from 'zod';
 import { RequestManager } from '../lib/utils'; // Assume this handles request IDs.
 import { ExtensionToolsService } from './ExtensionToolsService';
+import { CallContext, ToolCall } from '../types/tracking';
+import { ToolCallTracker } from './ToolCallTracker';
 
 interface TabData {
   tools: Tool[];
@@ -31,29 +33,60 @@ export default class McpHub {
       timeoutId: NodeJS.Timeout;
     }
   >(); // For awaiting reopen registration.
+  private toolCallTracker: ToolCallTracker;
 
   constructor(server: McpServer) {
     this.server = server;
+    this.toolCallTracker = new ToolCallTracker();
     this.registerStaticTools();
     this.setupConnections();
     this.trackActiveTab();
   }
 
-  private registerStaticTools() {
-    const extensionToolsService = new ExtensionToolsService(this.server, {
-      tabs: {
-        getAllTabs: true,
-        createTab: true,
-        closeTabs: true,
-        updateTab: true,
-      },
-      scripting: {
-        executeScript: false,
-        executeUserScript: true,
-        insertCSS: false,
-        removeCSS: false,
-      },
+  /**
+   * Build call context for a specific tool registration
+   */
+  private buildCallContextForTool(
+    domain: string,
+    dataId: string,
+    originalToolName: string,
+    extensionId: string
+  ): CallContext {
+    const domainData = this.getDomainData(domain);
+    const tabData = domainData.get(dataId);
+    const toolSource = dataId.startsWith('cached-') ? 'cached' : 'website';
+
+    return this.toolCallTracker.createBaseContext({
+      extensionId,
+      domain,
+      tabId: tabData?.tabId,
+      toolSource,
+      toolOrigin: tabData?.url,
+      isActiveTab: tabData?.tabId === this.activeTabId && !tabData.isClosed,
+      dataId,
+      clientName: `website-${domain}`,
     });
+  }
+
+  private registerStaticTools() {
+    const extensionToolsService = new ExtensionToolsService(
+      this.server,
+      {
+        tabs: {
+          getAllTabs: true,
+          createTab: true,
+          closeTabs: true,
+          updateTab: true,
+        },
+        scripting: {
+          executeScript: false,
+          executeUserScript: true,
+          insertCSS: false,
+          removeCSS: false,
+        },
+      },
+      this.toolCallTracker
+    );
     extensionToolsService.registerAllTools();
   }
 
@@ -122,7 +155,7 @@ export default class McpHub {
     });
 
     port.onDisconnect.addListener(() => {
-      this.unregisterTab(domain, dataId);
+      this.unregisterTab(domain, dataId, port);
     });
   }
 
@@ -177,9 +210,17 @@ export default class McpHub {
       if (this.registeredTools.has(toolName)) {
         this.registeredTools.get(toolName)!.update(config);
       } else {
-        const mcpTool = this.server.registerTool(toolName, config, async (args: any) =>
-          this.executeTool(domain, dataId, tool.name, args)
+        const mcpTool = this.toolCallTracker.registerTool(
+          this.server,
+          toolName,
+          config,
+          async (args: any) => {
+            return this.executeTool(domain, dataId, tool.name, args);
+          },
+          () =>
+            this.buildCallContextForTool(domain, dataId, tool.name, port.sender?.id ?? 'unknown')
         );
+
         this.registeredTools.set(toolName, mcpTool);
       }
     }
@@ -196,7 +237,7 @@ export default class McpHub {
     }
   }
 
-  private unregisterTab(domain: string, dataId: string) {
+  private unregisterTab(domain: string, dataId: string, port: chrome.runtime.Port) {
     const domainData = this.getDomainData(domain);
     const tabData = domainData.get(dataId);
     if (!tabData) return;
@@ -214,12 +255,12 @@ export default class McpHub {
         tabId: undefined,
         port: undefined,
       });
-      this.registerCachedTools(domain, cachedId);
+      this.registerCachedTools(domain, cachedId, port);
     }
     domainData.delete(dataId);
   }
 
-  private registerCachedTools(domain: string, dataId: string) {
+  private registerCachedTools(domain: string, dataId: string, port: chrome.runtime.Port) {
     const domainData = this.getDomainData(domain);
     const tabData = domainData.get(dataId);
     if (!tabData) return;
@@ -248,9 +289,17 @@ export default class McpHub {
         annotations: tool.annotations,
       };
 
-      const mcpTool = this.server.registerTool(toolName, config, async (args: any) =>
-        this.executeTool(domain, dataId, tool.name, args)
+      // register the tool with tracking
+      const mcpTool = this.toolCallTracker.registerTool(
+        this.server,
+        toolName,
+        config,
+        async (args: any) => {
+          return this.executeTool(domain, dataId, tool.name, args);
+        },
+        () => this.buildCallContextForTool(domain, dataId, tool.name, chrome.runtime.id)
       );
+
       this.registeredTools.set(toolName, mcpTool);
     }
   }
