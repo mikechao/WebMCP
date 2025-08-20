@@ -8,6 +8,7 @@ import {
   CheckCircle,
   ChevronDown,
   ChevronRight,
+  ChevronUp,
   Code,
   Loader2,
   MoreVertical,
@@ -28,12 +29,30 @@ interface ToolRunningUIProps {
   showSpinner?: boolean;
 }
 
-interface ToolArgumentsDisplayProps {
+interface ToolSuccessUIProps {
   tool: McpTool;
+  result: CallToolResult;
   args: Record<string, unknown>;
 }
 
-const ToolArgumentsDisplay = ({ tool, args }: ToolArgumentsDisplayProps) => {
+interface ToolErrorUIProps {
+  tool: McpTool;
+  status: any;
+  args: Record<string, unknown>;
+}
+
+interface ToolArgumentsDisplayProps {
+  tool: McpTool;
+  args: Record<string, unknown>;
+  textColor: string;
+}
+
+const ToolArgumentsDisplay = ({
+  tool,
+  args,
+  textColor = 'text-slate-500',
+}: ToolArgumentsDisplayProps) => {
+  const [isOpen, setIsOpen] = useState(false);
   const properties = tool.inputSchema?.properties;
 
   if (!properties || Object.keys(properties).length === 0) {
@@ -46,34 +65,50 @@ const ToolArgumentsDisplay = ({ tool, args }: ToolArgumentsDisplayProps) => {
   }
 
   return (
-    <div className="space-y-2">
-      <div className="flex items-center gap-2 text-xs font-medium text-slate-700">
-        <Code className="h-3 w-3" />
-        <span>Arguments:</span>
-      </div>
-      <div className="bg-slate-50 p-2 rounded-lg border border-slate-200 overflow-auto space-y-2">
-        {Object.keys(properties).map((key) => (
-          <div key={key} className="flex flex-col gap-1 font-mono text-xs">
-            <div className="flex items-center gap-1.5">
-              <div className="w-1.5 h-1.5 rounded-full bg-slate-400"></div>
-              <span className="font-semibold text-slate-700 break-all">{key}:</span>
+    <Collapsible open={isOpen} onOpenChange={setIsOpen}>
+      <CollapsibleTrigger asChild>
+        <button
+          className={`flex items-center gap-2 text-xs font-medium ${textColor} hover:text-slate-900 hover:bg-slate-100 transition-colors w-full text-left cursor-pointer rounded -mx-1 px-1 py-0.5`}
+        >
+          <span>Arguments:</span>
+          {isOpen ? (
+            <>
+              <span>Hide</span>
+              <ChevronUp className="h-3 w-3" />
+            </>
+          ) : (
+            <>
+              <span>Show</span>
+              <ChevronDown className="h-3 w-3" />
+            </>
+          )}
+        </button>
+      </CollapsibleTrigger>
+      <CollapsibleContent>
+        <div className="mt-2 bg-slate-50 p-2 rounded-lg border border-slate-200 overflow-auto space-y-2">
+          {Object.keys(properties).map((key) => (
+            <div key={key} className="flex flex-col gap-1 font-mono text-xs">
+              <div className="flex items-center gap-1.5">
+                <div className="w-1.5 h-1.5 rounded-full bg-slate-400"></div>
+                <span className="font-semibold text-slate-600 break-all">{key}:</span>
+              </div>
+              <div className="bg-white p-2 rounded border border-slate-200 shadow-sm ml-3">
+                {args[key] !== undefined ? (
+                  <code className="text-slate-700 break-all text-xs">
+                    {JSON.stringify(args[key], null, 2)}
+                  </code>
+                ) : (
+                  <div className="flex items-center gap-1.5">
+                    <Loader2 className="h-2.5 w-2.5 animate-spin text-slate-500" />
+                    <span className="text-slate-600 italic text-xs">streaming...</span>
+                  </div>
+                )}
+              </div>
             </div>
-            <div className="bg-white p-2 rounded border border-slate-200 shadow-sm ml-3">
-              {args[key] !== undefined ? (
-                <code className="text-slate-700 break-all text-xs">
-                  {JSON.stringify(args[key], null, 2)}
-                </code>
-              ) : (
-                <div className="flex items-center gap-1.5">
-                  <Loader2 className="h-2.5 w-2.5 animate-spin text-slate-500" />
-                  <span className="text-slate-500 italic text-xs">streaming...</span>
-                </div>
-              )}
-            </div>
-          </div>
-        ))}
-      </div>
-    </div>
+          ))}
+        </div>
+      </CollapsibleContent>
+    </Collapsible>
   );
 };
 
@@ -127,7 +162,7 @@ export const ToolRunningUI: React.FC<ToolRunningUIProps> = ({ tool, args, showSp
                 )}
               </div>
             </div>
-            <ToolArgumentsDisplay tool={tool} args={args} />
+            <ToolArgumentsDisplay tool={tool} args={args} textColor="text-blue-700" />
           </div>
         </CollapsibleContent>
       </div>
@@ -184,7 +219,7 @@ const parseErrorMessage = (errorMessage: string): { summary: string; details?: a
   return { summary: errorMessage };
 };
 
-export const ToolErrorUI: React.FC<{ tool: McpTool; status: any }> = ({ tool, status }) => {
+export const ToolErrorUI: React.FC<ToolErrorUIProps> = ({ tool, status, args }) => {
   const [isOpen, setIsOpen] = useState(false);
   const rawErrorMessage = (status.error as Error)?.message || 'An unknown error occurred.';
   const { summary: errorMessage, details: errorDetails } = parseErrorMessage(rawErrorMessage);
@@ -250,6 +285,7 @@ export const ToolErrorUI: React.FC<{ tool: McpTool; status: any }> = ({ tool, st
                 )}
               </div>
             </div>
+            <ToolArgumentsDisplay tool={tool} args={args} textColor="text-red-700" />
           </div>
         </CollapsibleContent>
       </div>
@@ -391,10 +427,7 @@ const JsonViewer = ({
   return renderValue(data, name);
 };
 
-export const ToolSuccessUI: React.FC<{ tool: McpTool; result: CallToolResult }> = ({
-  tool,
-  result,
-}) => {
+export const ToolSuccessUI: React.FC<ToolSuccessUIProps> = ({ tool, result, args = {} }) => {
   const [isOpen, setIsOpen] = useState(false);
 
   // Check if this is an error result according to MCP spec
@@ -571,6 +604,7 @@ export const ToolSuccessUI: React.FC<{ tool: McpTool; result: CallToolResult }> 
                 )}
               </div>
             </div>
+            <ToolArgumentsDisplay tool={tool} args={args} textColor={`${colorClasses.text}`} />
           </div>
         </CollapsibleContent>
       </div>
