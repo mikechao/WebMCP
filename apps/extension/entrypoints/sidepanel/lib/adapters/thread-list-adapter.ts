@@ -228,7 +228,19 @@ export class IndexedDBThreadListAdapter implements RemoteThreadListAdapter {
  * Factory function to create the thread list adapter
  */
 export function createIndexedDBThreadListAdapter(): RemoteThreadListAdapter {
-  return new IndexedDBThreadListAdapter();
+  const adapter = new IndexedDBThreadListAdapter();
+  
+  // Return a plain object with methods bound to the instance
+  // This ensures methods are enumerable and can be spread properly
+  return {
+    list: adapter.list.bind(adapter),
+    initialize: adapter.initialize.bind(adapter),
+    rename: adapter.rename.bind(adapter),
+    archive: adapter.archive.bind(adapter),
+    unarchive: adapter.unarchive.bind(adapter),
+    delete: adapter.delete.bind(adapter),
+    generateTitle: adapter.generateTitle.bind(adapter),
+  };
 }
 
 export default IndexedDBThreadListAdapter;
