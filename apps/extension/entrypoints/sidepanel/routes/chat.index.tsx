@@ -2,9 +2,7 @@ import { Thread } from '@/entrypoints/sidepanel/components/assistant-ui/thread';
 import { ThreadList } from '@/entrypoints/sidepanel/components/assistant-ui/thread-list';
 import { ToolSelector } from '@/entrypoints/sidepanel/components/tool-selector';
 import { Button } from '@/entrypoints/sidepanel/components/ui/button';
-import { AssistantRuntimeProvider } from '@assistant-ui/react';
-import { AssistantChatTransport, useChatRuntime } from '@assistant-ui/react-ai-sdk';
-import { lastAssistantMessageIsCompleteWithToolCalls } from 'ai';
+import { PersistentChatRuntimeProvider } from '@/entrypoints/sidepanel/lib/persistent-chat-runtime';
 import { McpClientProvider } from '@mcp-b/mcp-react-hooks';
 import { createFileRoute } from '@tanstack/react-router';
 import {
@@ -22,13 +20,7 @@ const Chat = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isToolSelectorOpen, setIsToolSelectorOpen] = useState(false);
 
-  // // Example 1: Custom API URL while keeping system/tools forwarding
-  const runtime = useChatRuntime({
-    transport: new AssistantChatTransport({
-      api: 'http://localhost:8787/api/chat', // Custom API URL with forwarding
-    }),
-    sendAutomaticallyWhen: (messages) => lastAssistantMessageIsCompleteWithToolCalls(messages),
-  }); // Allow other components to open the tool selector via a window event
+  // Allow other components to open the tool selector via a window event
   useEffect(() => {
     const handler = () => setIsToolSelectorOpen(true);
     window.addEventListener('open-tool-selector', handler as EventListener);
@@ -37,7 +29,7 @@ const Chat = () => {
 
   return (
     <McpClientProvider client={client} transport={transport} opts={{}}>
-      <AssistantRuntimeProvider runtime={runtime}>
+      <PersistentChatRuntimeProvider apiUrl="http://localhost:8787/api/chat">
         {isToolSelectorOpen ? (
           // Tool selector view
           <ToolSelector onClose={() => setIsToolSelectorOpen(false)} />
@@ -123,7 +115,7 @@ const Chat = () => {
             </div>
           </div>
         )}
-      </AssistantRuntimeProvider>
+      </PersistentChatRuntimeProvider>
     </McpClientProvider>
   );
 };
