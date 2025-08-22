@@ -123,6 +123,8 @@ export class DatabaseUtils {
 
   // Message operations
   static async addMessage(message: Omit<ChatMessage, 'createdAt'>): Promise<ChatMessage> {
+    console.log(`[DatabaseUtils] Adding message to database:`, message);
+    
     const messageWithTimestamp: ChatMessage = {
       ...message,
       createdAt: new Date(),
@@ -131,6 +133,7 @@ export class DatabaseUtils {
     await db.transaction('rw', db.messages, db.threads, async () => {
       // Add the message
       await db.messages.add(messageWithTimestamp);
+      console.log(`[DatabaseUtils] Message added to database with timestamp:`, messageWithTimestamp);
       
       // Update thread message count and timestamp
       const thread = await db.threads.get(message.threadId);
@@ -139,6 +142,9 @@ export class DatabaseUtils {
           messageCount: thread.messageCount + 1,
           updatedAt: new Date(),
         });
+        console.log(`[DatabaseUtils] Updated thread ${message.threadId} message count to ${thread.messageCount + 1}`);
+      } else {
+        console.warn(`[DatabaseUtils] Thread ${message.threadId} not found when adding message`);
       }
     });
 
@@ -146,11 +152,17 @@ export class DatabaseUtils {
   }
 
   static async getThreadMessages(threadId: string): Promise<ChatMessage[]> {
+    console.log(`[DatabaseUtils] Getting messages for thread: ${threadId}`);
+    
     const messages = await db.messages
       .where('threadId')
       .equals(threadId)
       .toArray();
-    return messages.sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime());
+      
+    const sortedMessages = messages.sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime());
+    console.log(`[DatabaseUtils] Retrieved ${sortedMessages.length} messages for thread ${threadId}:`, sortedMessages);
+    
+    return sortedMessages;
   }
 
   static async updateMessage(id: string, updates: Partial<ChatMessage>): Promise<void> {
@@ -205,7 +217,9 @@ export class DatabaseUtils {
 
   // Conversion utilities for assistant-ui
   static convertToThreadMessage(message: ChatMessage): ThreadMessageLike {
-    return {
+    console.log(`[DatabaseUtils] Converting ChatMessage to ThreadMessageLike:`, message);
+    
+    const converted = {
       id: message.id,
       role: message.role as any,
       content: message.content,
@@ -214,13 +228,18 @@ export class DatabaseUtils {
       attachments: message.attachments,
       metadata: message.metadata,
     };
+    
+    console.log(`[DatabaseUtils] Converted result:`, converted);
+    return converted;
   }
 
   static convertFromThreadMessage(
     message: ThreadMessageLike, 
     threadId: string
   ): Omit<ChatMessage, 'createdAt'> {
-    return {
+    console.log(`[DatabaseUtils] Converting ThreadMessageLike to ChatMessage:`, message, `threadId: ${threadId}`);
+    
+    const converted = {
       id: message.id || `msg-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
       threadId,
       role: message.role,
@@ -229,6 +248,9 @@ export class DatabaseUtils {
       attachments: message.attachments ? [...(message.attachments as any[])] : undefined,
       status: message.status,
     };
+    
+    console.log(`[DatabaseUtils] Converted result:`, converted);
+    return converted;
   }
 
   // Database maintenance

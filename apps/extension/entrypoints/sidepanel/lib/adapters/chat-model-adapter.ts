@@ -21,19 +21,28 @@ export class StreamingChatModelAdapter implements ChatModelAdapter {
       // Convert assistant-ui messages to the format expected by your backend
       const formattedMessages = this.formatMessagesForBackend(messages);
 
+      console.log('[ChatAdapter] Original messages:', messages);
+      console.log('[ChatAdapter] Formatted messages:', formattedMessages);
+      console.log('[ChatAdapter] Context object:', context);
+
+      const requestBody = {
+        messages: formattedMessages,
+        // Forward any tools from context if needed
+        tools: context?.tools || [],
+        // Include system from context if present
+        system: context?.system,
+        // Don't spread the entire context as it might override messages
+      };
+
+      console.log('[ChatAdapter] Full request body:', JSON.stringify(requestBody, null, 2));
+
       // Make the streaming request to your backend
       const response = await fetch(this.apiUrl, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          messages: formattedMessages,
-          // Forward any tools from context if needed
-          tools: context?.tools || [],
-          // Include any other context data your backend expects
-          ...context,
-        }),
+        body: JSON.stringify(requestBody),
         signal: abortSignal,
       });
 
@@ -146,12 +155,11 @@ export class StreamingChatModelAdapter implements ChatModelAdapter {
         content = String(message.content);
       }
 
+      // Return only the fields that AI SDK expects
       return {
         role: message.role,
         content,
-        // Include any additional fields your backend expects
-        id: message.id,
-        createdAt: message.createdAt,
+        // Don't include id, createdAt, or other extra fields that AI SDK doesn't expect
       };
     });
   }

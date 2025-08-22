@@ -30,19 +30,24 @@ export class IndexedDBHistoryAdapter implements ThreadHistoryAdapter {
    */
   async load(): Promise<ExportedMessageRepository & { unstable_resume?: boolean }> {
     try {
+      console.log(`[HistoryAdapter] Loading messages for thread: ${this.threadId}`);
+      
       // Ensure database is initialized
       await DatabaseManager.initialize();
 
       // Get messages from database
       const dbMessages = await DatabaseUtils.getThreadMessages(this.threadId);
+      console.log(`[HistoryAdapter] Found ${dbMessages.length} messages in database:`, dbMessages);
       
       // Convert to ThreadMessageLike format
       const messageLikes: ThreadMessageLike[] = dbMessages.map(dbMessage => 
         DatabaseUtils.convertToThreadMessage(dbMessage)
       );
+      console.log(`[HistoryAdapter] Converted to ThreadMessageLike:`, messageLikes);
 
       // Use the built-in converter to create proper repository format
       const repository = MessageRepo.fromArray(messageLikes);
+      console.log(`[HistoryAdapter] Created repository:`, repository);
 
       return {
         ...repository,
@@ -64,16 +69,21 @@ export class IndexedDBHistoryAdapter implements ThreadHistoryAdapter {
    */
   async append(item: ExportedMessageRepositoryItem): Promise<void> {
     try {
+      console.log(`[HistoryAdapter] Appending message to thread ${this.threadId}:`, item);
+      
       // Ensure database is initialized
       await DatabaseManager.initialize();
 
       // Convert ThreadMessage to our database format
       const dbMessage = DatabaseUtils.convertFromThreadMessage(item.message, this.threadId);
+      console.log(`[HistoryAdapter] Converted to database format:`, dbMessage);
       
       // Save to database
-      await DatabaseUtils.addMessage(dbMessage);
+      const savedMessage = await DatabaseUtils.addMessage(dbMessage);
+      console.log(`[HistoryAdapter] Message saved successfully:`, savedMessage);
     } catch (error) {
-      console.error('Failed to append message:', error);
+      console.error(`[HistoryAdapter] Failed to append message to thread ${this.threadId}:`, error);
+      console.error(`[HistoryAdapter] Message that failed:`, item);
       // Don't throw here to avoid breaking the chat flow
       // The message will still be in memory even if saving fails
     }

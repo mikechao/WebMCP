@@ -46,13 +46,26 @@ const chat = new Hono<{ Bindings: Env }>().post(
   '/chat',
   zValidator('json', PostRequestBodySchema),
   async (c) => {
-    const { messages, system, tools } = c.req.valid('json');
+    const body = c.req.valid('json');
+    console.log('[Backend] Full request body:', JSON.stringify(body, null, 2));
+    
+    const { messages, system, tools } = body;
+    
+    console.log('[Backend] Destructured messages:', messages);
+    console.log('[Backend] Messages type:', typeof messages);
+    console.log('[Backend] Is messages defined?', messages !== undefined);
+    console.log('[Backend] Is messages an array?', Array.isArray(messages));
+
+    if (!messages) {
+      console.log('[Backend] ERROR: messages is undefined or null');
+      return c.json({ error: 'Messages are required' }, 400);
+    }
 
     const result = streamText({
       model: getModel(c),
 
       system,
-      messages: convertToModelMessages(messages),
+      messages: messages, // Use messages directly without convertToModelMessages
 
       stopWhen: stepCountIs(100),
       tools: {
