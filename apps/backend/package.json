@@ -3,7 +3,9 @@
   "type": "module",
   "license": "AGPL-3.0",
   "scripts": {
-    "dev": "wrangler dev",
+    "dev": "wrangler dev --local --local-protocol https --https-cert-path localhost+1.pem --https-key-path localhost+1-key.pem",
+    "dev-http": "wrangler dev --local",
+    "dev-https-basic": "wrangler dev --local --local-protocol https",
     "deploy": "wrangler deploy --minify",
     "cf-typegen": "wrangler types --env-interface CloudflareBindings"
   },
