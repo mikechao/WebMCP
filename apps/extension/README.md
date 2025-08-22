@@ -13,12 +13,13 @@ AI-powered browser assistant with Model Context Protocol integration for enhance
    ```
 
 2. Update `.env` with your configuration:
-   - `VITE_API_BASE_URL`: Base URL for the API server
-   - `VITE_API_CHAT_ENDPOINT`: Chat API endpoint path
-   - `VITE_CHAT_API_URL`: (Optional) Override the full chat API URL
-   - `VITE_ENABLE_DEBUG_LOGGING`: Enable debug logging (default: false)
-   - `VITE_MAX_CHAT_STEPS`: Maximum chat steps (default: 5)
    - `CHROME_PATH`: (Optional) Path to Chrome binary for development testing
+   - `VITE_MODEL_PROVIDER`: openai or anthropic , which model provider to use
+   - `VITE_OPENAI_MODEL_NAME`: the openai model to use
+   - `VITE_OPENAI_API_KEY`: openai api key
+   - `VITE_ANTHROPIC_MODEL_NAME`: the anthropic model to use
+   - `VITE_ANTHROPIC_API_KEY`: anthropic api key
+
 
 ### Running the Extension
 

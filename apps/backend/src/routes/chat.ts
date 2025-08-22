@@ -1,5 +1,5 @@
-import { anthropic } from '@ai-sdk/anthropic';
-import { openai } from '@ai-sdk/openai';
+import { createAnthropic } from '@ai-sdk/anthropic';
+import { createOpenAI } from '@ai-sdk/openai';
 import { zValidator } from '@hono/zod-validator';
 import { convertToModelMessages, stepCountIs, streamText } from 'ai';
 
@@ -17,25 +17,33 @@ const PostRequestBodySchema = z.object({
   tools: z.any().optional(),
 });
 
+/**
+ * Expected headers for the chat endpoint. Keys are lower-cased because
+ * HTTP header names are case-insensitive and libraries typically normalize
+ * them to lower-case.
+ */
+const PostHeadersSchema = z.object({
+  'x-api-key': z.string().nonempty(),
+  'x-model-provider': z.enum(['openai', 'anthropic']),
+  'x-model-name': z.string().nonempty(),
+});
+
 export const maxDuration = 30;
 
-function getModel(c: Context<{ Bindings: Env }>) {
-  // @ts-ignore
-  if (c.env.MODEL_PROVIDER) {
-    // @ts-ignore
-    if (c.env.MODEL_PROVIDER === 'openai') {
-      // @ts-ignore
-      const modelName = c.env.OPENAI_MODEL_NAME ?? 'gpt-4o-mini';
-      return openai(modelName);
-    }
-    // @ts-ignore
-    if (c.env.MODEL_PROVIDER === 'anthropic') {
-      // @ts-ignore
-      return anthropic(c.env.ANTHROPIC_MODEL_NAME ?? 'claude-sonnet-4-20250514');
-    }
+function getModel(headers: z.infer<typeof PostHeadersSchema>) {
+  if (headers['x-model-provider'] === 'openai') {
+    const provider = createOpenAI({
+      apiKey: headers['x-api-key'],
+    });
+    return provider(headers['x-model-name']);
   }
-  // default fallback
-  return anthropic('claude-sonnet-4-20250514');
+  if (headers['x-model-provider'] === 'anthropic') {
+    const provider = createAnthropic({
+      apiKey: headers['x-api-key'],
+    });
+    return provider(headers['x-model-name']);
+  }
+  throw new Error(`Unsupported model provider: ${headers['x-model-provider']}`);
 }
 
 /**
@@ -44,12 +52,16 @@ function getModel(c: Context<{ Bindings: Env }>) {
  */
 const chat = new Hono<{ Bindings: Env }>().post(
   '/chat',
+  // validate headers first so missing/invalid headers short-circuit the request
+  zValidator('header', PostHeadersSchema),
   zValidator('json', PostRequestBodySchema),
   async (c) => {
+    // typed header object from zValidator
+    const headers = c.req.valid('header');
     const { messages, system, tools } = c.req.valid('json');
 
     const result = streamText({
-      model: getModel(c),
+      model: getModel(headers),
 
       system,
       messages: convertToModelMessages(messages),
